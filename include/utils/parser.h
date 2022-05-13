@@ -4,6 +4,7 @@
 #endif
 #include <fstream>
 #include <cstddef>
+#include <cstdlib>
 #include <sstream>
 
 namespace MACHINE_LEARNING {

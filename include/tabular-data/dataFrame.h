@@ -7,8 +7,10 @@ namespace MACHINE_LEARNING {
     template<typename T = double>
     class DataFrame {
         Matrix<T> dt;
-        std::unordered_map<std::string, size_t> name2ind;
+        size_t cateVar_ind = 0;
+        std::unordered_map<std::string, size_t> name2ind, cateVar_mapping;
         std::vector<std::string> ind2name;
+        std::vector<std::vector<std::string>> cateVar;
         public:
             DataFrame(size_t nrow = 50, size_t ncol = 50, const std::vector<std::string>&& colnames = {}) : dt(nrow, ncol) {
                 if (!colnames.empty()) {
@@ -60,11 +62,19 @@ namespace MACHINE_LEARNING {
                     name2ind = df.name2ind;
                     init_ind2name(dt.col);
                 }
+                if (!df.cateVar.empty()) {
+                    cateVar = df.cateVar;
+                    cateVar_mapping = df.cateVar_mapping;
+                }
             }
             DataFrame(DataFrame&& df) : dt(std::move(df.dt)) {
                 if (!df.ind2name.empty()) {
                     name2ind = df.name2ind;
                     ind2name = df.ind2name;
+                }
+                if (!df.cateVar.empty()) {
+                    cateVar = df.cateVar;
+                    cateVar_mapping = df.cateVar_mapping;
                 }
             }
 
@@ -113,6 +123,10 @@ namespace MACHINE_LEARNING {
                     name2ind = df.name2ind;
                     init_ind2name(df.colNum());
                 }
+                if (!df.cateVar.empty()) {
+                    cateVar = df.cateVar;
+                    cateVar_mapping = df.cateVar_mapping;
+                }
                 return *this;
             }
             
@@ -122,12 +136,20 @@ namespace MACHINE_LEARNING {
                     name2ind = df.name2ind;
                     ind2name = df.ind2name;
                 }
+                if (!df.cateVar.empty()) {
+                    cateVar = df.cateVar;
+                    cateVar_mapping = df.cateVar_mapping;
+                }
                 return *this;
             }
 
-            template<typename R>
-            void insert(const size_t r, const size_t c, R&& val) {
-                dt.insert(r, c, std::forward<R>(val));
+            void insert(const size_t r, const size_t c, T&& val) {
+                dt.insert(r, c, std::forward<T>(val));
+            }
+
+            void insert(const size_t c, std::string&& val) {
+                if (!cateVar_mapping.count(c)) cateVar_mapping[c] = cateVar_ind++;
+                cateVar[cateVar_mapping[c]].push_back(std::move(val));
             }
 
             void addFeature(T* feat, std::string&& colname = {}) {
@@ -141,13 +163,17 @@ namespace MACHINE_LEARNING {
             void dropFeature(size_t feat) {
                 size_t n = colNum() - 1;
                 name2ind.erase(ind2name[feat]);
+                if (cateVar_mapping.count(feat)) cateVar_mapping.erase(feat);
                 for (size_t i = feat; i < n; ++i) name2ind[ind2name[i] = ind2name[i + 1]] = i;
                 ind2name.pop_back();
                 dt.dropCol(feat);
             }
 
             void dropFeature(size_t* feat_set, size_t n) {
-                for (size_t i = 0; i < n; ++i) name2ind.erase(ind2name[feat_set[i]]);
+                for (size_t i = 0; i < n; ++i) {
+                    name2ind.erase(ind2name[feat_set[i]]);
+                    if (cateVar_mapping.count(feat_set[i])) cateVar_mapping.erase(feat_set[i]);
+                }
                 init_ind2name(colNum() - n);
                 dt.dropCol(feat_set, n);
             }
@@ -163,6 +189,11 @@ namespace MACHINE_LEARNING {
                     for (size_t i = 0; i < n; ++i) name2ind[ind2name[i] = new_colname[i]] = i;
                 }
 
+                if (!cateVar.empty()) {
+                    assert(!df.cateVar.empty());
+                    for (size_t i = 0; i < cateVar_ind; ++i) std::copy(df.cateVal[i].begin(), df.cateVal[i].end(), std::back_inserter(cateVal[i]));
+                }
+
                 dt.concat(df.dt, ROW);
             }
 
@@ -171,6 +202,10 @@ namespace MACHINE_LEARNING {
                 size_t i = colNum(), n = i + df.colNum();
                 ind2name.resize(n);
                 for (size_t cnt = 0; i < n; ++cnt, ++i) name2ind[ind2name[i] = df.ind2name[cnt]] = i;
+                if (!df.cateVar.empty()) {
+                    for (size_t j = 0; j < df.cateVar_ind; ++j) cateVar.push_back(df.cateVar[j]);
+                    
+                }
 
                 dt.concat(df.dt, COL);
             }
