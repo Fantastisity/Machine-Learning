@@ -1,2 +1,0 @@
-grid search
-    1) pass parameters as struct
