@@ -6,61 +6,142 @@
 namespace MACHINE_LEARNING {
     template<typename T = double>
     class DataFrame {
+        struct CstrFunctor {
+            size_t operator()(const char* str) const {
+                size_t hash = 5381;
+                for (; *str; ++str) hash = ((hash << 5) + hash) + *str;
+                return hash;
+            }
+            bool operator()(const char* a, const char* b) const {
+                return !strcmp(a, b);
+            }
+        };
         Matrix<T> dt;
         size_t cateVar_ind = 0;
-        std::unordered_map<std::string, size_t> name2ind, cateVar_mapping;
-        std::vector<std::string> ind2name;
-        std::vector<std::vector<std::string>> cateVar;
+        std::unordered_map<const char*, size_t, CstrFunctor, CstrFunctor> name2ind, cateVar_mapping;
+        char** ind2name = nullptr, ***cateVar = nullptr;
+
+        void resize_ind2name(size_t size) {
+            ind2name = (char**) realloc(ind2name, size);
+            if (!ind2name) {
+                std::cerr << "error realloc\n"; exit(1);
+            }
+        }
+
+        void resize_cateVar(size_t size, bool is_row) {
+            if (!is_row) {
+                cateVar = (char***) realloc(cateVar, sizeof(char**) * size);
+                if (!cateVar) {
+                    std::cerr << "error realloc\n"; exit(1);
+                }
+                for (size_t n = dt.row; cateVar_ind < size; ++cateVar_ind) {
+                    cateVar[cateVar_ind] = (char**) malloc(sizeof(char*) * n);
+                    if (!cateVar[cateVar_ind]) {
+                        std::cerr << "error malloc\n"; exit(1);
+                    }
+                }
+            } else {
+                for (size_t i = 0; i < cateVar_ind; ++i) {
+                    cateVar[i] = (char**) realloc(cateVar[i], sizeof(char*) * size);
+                    if (!cateVar[i]) {
+                        std::cerr << "error realloc\n"; exit(1);
+                    }
+                }
+            }
+        }
+
+        void dealloc() {
+            dt.dealloc();
+            if (ind2name) {
+                for (auto& [k, v] : name2ind) free(const_cast<char*>(k));
+                for (size_t i = 0, ncol = dt.col; i < ncol; ++i) free(ind2name[i]);
+                free(ind2name);
+                ind2name = nullptr;
+            }
+            if (cateVar) {
+                for (auto& [k, v] : cateVar_mapping) free(const_cast<char*>(k));
+                for (size_t i = 0; i < cateVar_ind; ++i) {
+                    for (size_t j = 0, ncol = dt.col; j < ncol; ++j) free(cateVar[i][j]);
+                    free(cateVar[j]);
+                }
+                free(cateVar); 
+                cateVar = nullptr;
+            }
+        }
         public:
             DataFrame(size_t nrow = 50, size_t ncol = 50, const std::vector<std::string>&& colnames = {}) : dt(nrow, ncol) {
                 if (!colnames.empty()) {
-                    for (size_t i = 0; i < ncol; ++i) name2ind[colnames[i]] = i;
-                    ind2name = colnames;
+                    init_ind2name(ncol, 0);
+                    for (size_t i = 0; i < ncol; ++i) {
+                        const char* tmp = strdup(colnames[i].c_str();
+                        name2ind[ind2name[i] = tmp] = i;
+                    }
                 }
             }
-            DataFrame(T** Mat, const size_t r, const size_t c, const std::vector<std::string>&& colnames = {}) : dt(Mat, r, c) {
+            DataFrame(T** Mat, const size_t nrow, const size_t ncol, const std::vector<std::string>&& colnames = {}) : dt(Mat, nrow, ncol) {
                 if (!colnames.empty()) {
-                    for (size_t i = 0; i < c; ++i) name2ind[colnames[i]] = i;
-                    ind2name = colnames;
+                    init_ind2name(ncol, 0);
+                    for (size_t i = 0; i < ncol; ++i) {
+                        const char* tmp = strdup(colnames[i].c_str();
+                        name2ind[ind2name[i] = tmp] = i;
+                    }
                 }
             }
-            DataFrame(const std::vector<std::vector<T>>&& Mat, const std::vector<std::string>&& colnames = {}) : dt(Mat) {
+            DataFrame(const std::vector<std::vector<T>>&& Mat, const std::vector<std::string>&& colnames = {}) : dt(std::move(Mat)) {
                 if (!colnames.empty()) {
-                    size_t n = Mat[0].size();
-                    for (size_t i = 0; i < n; ++i) name2ind[colnames[i]] = i;
-                    ind2name = colnames;
+                    size_t ncol = Mat[0].size();
+                    init_ind2name(ncol, 0);
+                    for (size_t i = 0; i < ncol; ++i) {
+                        const char* tmp = strdup(colnames[i].c_str();
+                        name2ind[ind2name[i] = tmp] = i;
+                    }
                 }
             }
-            DataFrame(const std::initializer_list<std::initializer_list<T>>&& Mat, const std::vector<std::string>&& colnames = {}) : dt(Mat) {
+            DataFrame(const std::initializer_list<std::initializer_list<T>>&& Mat, const std::vector<std::string>&& colnames = {}) 
+            : dt(std::move(Mat)) {
                 if (!colnames.empty()) {
-                    size_t n = (*Mat.begin()).size();
-                    for (size_t i = 0; i < n; ++i) name2ind[colnames[i]] = i;
-                    ind2name = colnames;
+                    size_t ncol = (*Mat.begin()).size();
+                    init_ind2name(ncol, 0);
+                    for (size_t i = 0; i < ncol; ++i) {
+                        const char* tmp = strdup(colnames[i].c_str();
+                        name2ind[ind2name[i] = tmp] = i;
+                    }
                 }
             }
             DataFrame(const Matrix<T>& m, const std::vector<std::string>&& colnames = {}) : dt(m) {
                 if (!colnames.empty()) {
-                    size_t n = dt.colNum();
-                    for (size_t i = 0; i < n; ++i) name2ind[colnames[i]] = i;
-                    ind2name = colnames;
+                    size_t ncol = dt.col;
+                    init_ind2name(ncol, 0);
+                    for (size_t i = 0; i < ncol; ++i) {
+                        const char* tmp = strdup(colnames[i].c_str();
+                        name2ind[ind2name[i] = tmp] = i;
+                    }
                 }
             }
-            DataFrame(Matrix<T>&& m, const std::vector<std::string>&& colnames = {}) : dt(m) {
+            DataFrame(Matrix<T>&& m, const std::vector<std::string>&& colnames = {}) : dt(std::move(m)) {
                 if (!colnames.empty()) {
-                    size_t n = dt.colNum();
-                    for (size_t i = 0; i < n; ++i) name2ind[colnames[i]] = i;
-                    ind2name = colnames;
+                    size_t ncol = dt.col;
+                    init_ind2name(ncol, 0);
+                    for (size_t i = 0; i < ncol; ++i) {
+                        const char* tmp = strdup(colnames[i].c_str();
+                        name2ind[ind2name[i] = tmp] = i;
+                    }
                 }
             }
             DataFrame(const std::unordered_map<std::string, std::vector<T>>& cols) {
                 size_t cnt = 0;
-                for (auto& [k, v] : cols) name2ind[k] = cnt++, dt.addFeature(v.data());
-                init_ind2name(cnt);
+                init_ind2name(cols.size(), 0);
+                for (auto& [k, v] : cols) {
+                    const char* tmp = strdup(k.c_str());
+                    name2ind[tmp] = cnt, dt.addCol(v.data());
+                    ind2name[cnt++] = tmp;
+                }
             }
             DataFrame(const DataFrame& df) : dt(df.dt) {
-                if (!df.ind2name.empty()) {
+                if (!df.name2ind.empty()) {
                     name2ind = df.name2ind;
-                    init_ind2name(dt.col);
+                    init_ind2name(dt.col, 0);
+                    std::copy(df.ind2name, df.ind2name + df.col, )
                 }
                 if (!df.cateVar.empty()) {
                     cateVar = df.cateVar;
@@ -118,6 +199,7 @@ namespace MACHINE_LEARNING {
             }
 
             auto& operator= (const DataFrame& df) {
+                dealloc();
                 dt = df.dt;
                 if (!df.ind2name.empty()) {
                     name2ind = df.name2ind;
@@ -131,6 +213,7 @@ namespace MACHINE_LEARNING {
             }
             
             auto& operator= (DataFrame&& df) {
+                dealloc();
                 dt = std::move(df.dt);
                 if (!df.ind2name.empty()) {
                     name2ind = df.name2ind;
@@ -210,13 +293,22 @@ namespace MACHINE_LEARNING {
                 dt.concat(df.dt, COL);
             }
 
-            void colNameMapping(std::string&& name, size_t ind) {
-                name2ind[name] = ind;
-                ind2name.push_back(name);
+            void colNameMapping(const char* name, size_t ind) {
+                if (!ind2name) {
+                    ind2name = (char**) malloc(colNum() * sizeof(char*));
+                    if (!ind2name) {
+                        std::cerr << "error malloc\n"; exit(1);
+                    }
+                } else if (ind >= colNum()) resize_ind2name(ind << 1);
+                const char* tmp = strdup(name);
+                name2ind[ind2name[ind] = tmp] = ind;
             }
 
             void init_ind2name(size_t n, bool assign = 1) {
-                ind2name.resize(n);
+                ind2name = (char**) malloc(n * sizeof(char*));
+                if (!ind2name) {
+                    std::cerr << "error malloc\n"; exit(1);
+                }
                 if (assign) for (auto& [k, v] : name2ind) ind2name[v] = k;
             }
 
@@ -234,6 +326,10 @@ namespace MACHINE_LEARNING {
 
             auto values() const {
                 return dt;
+            }
+
+            ~DataFrame() {
+                dealloc();
             }
 
             template<typename R>

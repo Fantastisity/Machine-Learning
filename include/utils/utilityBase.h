@@ -11,6 +11,7 @@
 #include <type_traits>
 #include <bitset>
 #include <string>
+#include <cstring>
 #include <thread>
 #include <iomanip>
 #include <iostream>
