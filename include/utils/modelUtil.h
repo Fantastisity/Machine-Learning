@@ -120,7 +120,7 @@ namespace MACHINE_LEARNING {
                     }
             };
 
-            auto train_test_split(DataFrame<double> X, DataFrame<double> Y, const float test_size = 0.25, const bool shuffle = 0) {
+            auto train_test_split(DataFrame<elem> X, DataFrame<elem> Y, const float test_size = 0.25, const bool shuffle = 0) {
                 size_t row = X.rowNum(), testRow = row * test_size;
                 if (shuffle) X.shuffle(), Y.shuffle();
                 return std::make_tuple(X.iloc(rangeSlicer(row - testRow),      rangeSlicer(X.colNum())), 
@@ -133,7 +133,7 @@ namespace MACHINE_LEARNING {
             auto abs(const Matrix<T>& m) 
             -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
                 size_t r = m.rowNum(), c = m.colNum();
-                Matrix<T> mat(r, c);
+                Matrix<T> mat(r * c);
                 for (size_t i = 0; i < r; ++i)
                     for (size_t j = 0; j < c; ++j)
                         mat.insert(i, j, m(i, j) < 0 ? -m(i, j) : m(i, j));
@@ -144,7 +144,7 @@ namespace MACHINE_LEARNING {
             auto sign(const Matrix<T>& m) 
             -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
                 size_t r = m.rowNum(), c = m.colNum();
-                Matrix<T> mat(r, c);
+                Matrix<T> mat(r * c);
                 for (size_t i = 0; i < r; ++i)
                     for (size_t j = 0; j < c; ++j)
                         mat.insert(i, j, m(i, j) < 0 ? -1 : (!mat(i, j) ? 0 : 1));
@@ -192,7 +192,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename U>
-            auto cross_validation(U& estimator, DataFrame<double>& X, DataFrame<double>& Y, size_t k = 5) -> 
+            auto cross_validation(U& estimator, DataFrame<elem>& X, DataFrame<elem>& Y, size_t k = 5) -> 
             typename std::enable_if<isModel<U>::val, double>::type {
                 if (k > X.rowNum()) k = 1;
                 auto [indTrain, indTest, range, n] = k_fold(k, X.rowNum()); 
@@ -212,7 +212,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename U>
-            auto grid_search(U& estimator, DataFrame<double>& X, DataFrame<double>& Y) -> 
+            auto grid_search(U& estimator, DataFrame<elem>& X, DataFrame<elem>& Y) -> 
             typename std::enable_if<isModel<U>::val>::type {
                 std::vector<double> tmp;
                 std::vector<std::vector<double>> param_comb, param_grid = estimator.p.gen_param_grid();

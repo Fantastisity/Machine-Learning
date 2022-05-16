@@ -27,7 +27,7 @@ namespace MACHINE_LEARNING {
             };
             std::ofstream output;
             params p;
-            Matrix<double> x, y;
+            Matrix<double> x{0}, y{0};
             double eta = 1e-9, lamb, alpha, eps = 1e-2;
             ll iter = 1000, batch_size;
             Regularizor r = None;

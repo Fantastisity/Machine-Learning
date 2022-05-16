@@ -9,7 +9,7 @@
 
 namespace MACHINE_LEARNING {
     class Parser {
-        DataFrame<double> df;
+        DataFrame<elem> df;
         ll cols = 0, rows = -1;
         public:
             Parser(std::string&& filename, char delim = ',');

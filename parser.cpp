@@ -4,12 +4,6 @@
 #endif
 
 namespace MACHINE_LEARNING {
-    static bool isDouble(std::string&& s, double& v) {
-        char* end;
-        v = strtod(s.c_str(), &end);
-        return *end == '\0';
-    }
-
     Parser::Parser(std::string&& filename, char delim) {
         std::ifstream input(filename);
         std::string line, col;
@@ -18,12 +12,8 @@ namespace MACHINE_LEARNING {
             std::stringstream ss(line);
             cnt = 0;
             while (getline(ss, col, delim)) {
-                if (rows == -1) df.colNameMapping(std::move(col), cnt++);
-                else {
-                    double v;
-                    if (isDouble(col, v)) df.insert(rows, cnt++, v);
-                    else df.insert(cnt, std::move(col));
-                }
+                if (rows == -1) df.colNameMapping(col.c_str(), cnt++);
+                else df.insert(rows, cnt++, col.c_str());
             }
             if (rows == -1) cols = cnt;
             ++rows;

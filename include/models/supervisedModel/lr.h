@@ -6,7 +6,7 @@
 namespace MACHINE_LEARNING {
     class LinearRegression : public SupervisedModel {
             friend class ModelUtil;
-            Matrix<double> w;
+            Matrix<double> w{0};
 
             auto loss();
 
@@ -21,7 +21,7 @@ namespace MACHINE_LEARNING {
 
             void print_weights();
 
-            void fit(const DataFrame<double>& x, const DataFrame<double>& y, const uint8_t verbose = 0);
+            void fit(const DataFrame<elem>& x, const DataFrame<elem>& y, const uint8_t verbose = 0);
 
             Matrix<double> predict(const DataFrame<double>& xtest);
     };

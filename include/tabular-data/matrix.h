@@ -79,10 +79,12 @@ namespace MACHINE_LEARNING {
                 }
             }
         public:
-            Matrix(size_t nrow = 50, size_t ncol = 50) : cap(nrow * ncol) {
-                mat = (T*) calloc(cap, sizeof(T));
-                if (!mat) {
-                    std::cerr << "error malloc\n"; exit(1);
+            explicit Matrix(size_t cap = 1000) : cap(cap) {
+                if (cap) {
+                    mat = (T*) calloc(cap, sizeof(T));
+                    if (!mat) {
+                        std::cerr << "error malloc\n"; exit(1);
+                    }
                 }
             }
 
@@ -232,7 +234,7 @@ namespace MACHINE_LEARNING {
             }
 
             Matrix trans() {
-                Matrix m(col, row);
+                Matrix m(col * row);
                 for (size_t i = 0; i < row; ++i)
                     for (size_t j = 0; j < col; ++j) m.insert(j, i, mat[i * col + j]);
                 return m;
@@ -256,7 +258,7 @@ namespace MACHINE_LEARNING {
 
             template<typename Q, typename U>
             auto operator()(slice<Q>&& s1, slice<U>&& s2) {
-                Matrix<T> subMat(s1.size, s2.size);
+                Matrix<T> subMat(s1.size * s2.size);
                 size_t r = 0, c, tmp_r, tmp_c;
                 for (auto i = s1.start; i < s1.end; ++i, ++r) {
                     c = 0;
@@ -280,7 +282,7 @@ namespace MACHINE_LEARNING {
             auto operator* (Matrix<R>& rht) const {
                 assert(col == rht.row);
                 using tp = decltype(std::declval<T>() * std::declval<R>());
-                Matrix<tp> m(row, rht.col);
+                Matrix<tp> m(row * rht.col);
                 m.row = row, m.col = rht.col;
                 MatrixUtil::Mult<T, R, tp>::mult(mat, rht.mat, m.mat, row, col, rht.col);
                 return m;
@@ -290,7 +292,7 @@ namespace MACHINE_LEARNING {
             auto operator* (Matrix<R>&& rht) const {
                 assert(col == rht.row);
                 using tp = decltype(std::declval<T>() * std::declval<R>());
-                Matrix<tp> m(row, rht.col);
+                Matrix<tp> m(row * rht.col);
                 m.row = row, m.col = rht.col;
                 MatrixUtil::Mult<T, R, tp>::mult(mat, rht.mat, m.mat, row, col, rht.col);
                 return m;

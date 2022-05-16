@@ -28,6 +28,12 @@ namespace MACHINE_LEARNING {
     using ptrSlicer = slice<size_t*>;
 
     struct MatrixUtil : public UtilBase {
+        static bool isDouble(const char* s, double& res) {
+            char* end;
+            res = strtod(s, &end);
+            return *end == '\0';
+        }
+
         template<typename T>
         struct isPTR {
             const static bool val = 0;
@@ -188,5 +194,243 @@ namespace MACHINE_LEARNING {
                 Mult<float, int, float>::mult(y, x, res, r, k, c);
             }
         };
+    };
+
+     struct CstrFunctor {
+        size_t operator()(const char* str) const {
+            size_t hash = 5381;
+            for (; *str; ++str) hash = ((hash << 5) + hash) + *str;
+            return hash;
+        }
+        bool operator()(const char* a, const char* b) const {
+            return !strcmp(a, b);
+        }
+    };
+
+    struct elem {
+        enum class vtype { DBL, STR };
+        vtype t;
+        double dval{0.0};
+        char* sval = nullptr;
+
+        operator bool() const {
+            assert(t != vtype::STR);
+            return dval;
+        }
+
+        operator double() {
+            assert(t == vtype::DBL);
+            return dval;
+        }
+
+        elem& operator= (const elem& e) {
+            switch (e.t) {
+                case vtype::DBL:
+                    dval = e.dval, t = vtype::DBL;
+                    break;
+                case vtype::STR:
+                    sval = strdup(e.sval), t = vtype::STR;
+            }
+            return *this;
+        }
+
+        elem& operator= (elem&& e) {
+            switch (e.t) {
+                case vtype::DBL:
+                    dval = e.dval, t = vtype::DBL;
+                    break;
+                case vtype::STR:
+                    sval = e.sval, t = vtype::STR, e.sval = nullptr;
+            }
+            return *this;
+        }
+
+        elem() = default;
+        ~elem() {
+            if (sval) {
+                free(sval);
+                sval = nullptr;
+            }
+        }
+
+        elem(const elem& e) {
+            switch (e.t) {
+                case vtype::DBL:
+                    dval = e.dval, t = vtype::DBL;
+                    break;
+                case vtype::STR:
+                    sval = strdup(e.sval), t = vtype::STR;
+            }
+        }
+
+        elem(elem&& e) {
+            switch (e.t) {
+                case vtype::DBL:
+                    dval = e.dval, t = vtype::DBL;
+                    break;
+                case vtype::STR:
+                    sval = e.sval, t = vtype::STR, e.sval = nullptr;
+            }
+        }
+
+        elem(const double val) : dval(val), t(vtype::DBL) {}
+        elem(const char* val) {
+            double tmp_dval;
+            if (MatrixUtil::isDouble(val, tmp_dval)) dval = tmp_dval, t = vtype::DBL;
+            else sval = strdup(val), t = vtype::STR;
+        }
+
+        elem& operator= (const double val) {
+            dval = val, t = vtype::DBL;
+            return *this;
+        }
+
+        elem& operator= (const char* val) {
+            double tmp_dval;
+            if (MatrixUtil::isDouble(val, tmp_dval)) dval = tmp_dval, t = vtype::DBL;
+            else sval = strdup(val), t = vtype::STR;
+            return *this;
+        }
+
+        bool operator== (const elem& e) const {
+            bool res = t == e.t;
+            if (!res) return 0;
+            switch (e.t) {
+                case vtype::DBL:
+                    res = e.dval == dval;
+                    break;
+                case vtype::STR:
+                    res = !strcmp(e.sval, sval);
+            }
+            return res;
+        }
+
+        bool operator!= (const elem& e) const {
+            return !(*this == e);
+        }
+
+        elem& operator+= (const elem& e) {
+            assert(t != vtype::STR && e.t != vtype::STR);
+            dval += e.dval;
+            return *this;
+        }
+
+        template<typename T>
+        auto operator+= (const T val) 
+        -> typename std::enable_if<MatrixUtil::isNumerical<T>::val, elem&>::type {
+            assert(t != vtype::STR);
+            dval += val;
+            return *this;
+        }
+
+        elem& operator-= (const elem& e) {
+            assert(t != vtype::STR && e.t != vtype::STR);
+            dval -= e.dval;
+            return *this;
+        }
+
+        template<typename T>
+        auto operator-= (const T val)
+        -> typename std::enable_if<MatrixUtil::isNumerical<T>::val, elem&>::type {
+            assert(t != vtype::STR);
+            dval -= val;
+            return *this;
+        }
+
+        elem& operator*= (const elem& e) {
+            assert(t != vtype::STR && e.t != vtype::STR);
+            dval *= e.dval;
+            return *this;
+        }
+
+        template<typename T>
+        auto operator*= (const T val)
+        -> typename std::enable_if<MatrixUtil::isNumerical<T>::val, elem&>::type {
+            assert(t != vtype::STR);
+            dval *= val;
+            return *this;
+        }
+
+        elem& operator/= (const elem& e) {
+            assert(t != vtype::STR && (e.t == vtype::DBL && e.dval));
+            dval /= e.dval;
+            return *this;
+        }
+
+        template<typename T>
+        auto operator/= (const T val)
+        -> typename std::enable_if<MatrixUtil::isNumerical<T>::val, elem&>::type {
+            assert(t != vtype::STR && val);
+            dval /= val;
+            return *this;
+        }
+
+        elem operator-() {
+            assert(t != vtype::STR);
+            return elem(-dval);
+        }
+
+        elem& operator++ () {
+            assert(t != vtype::STR);
+            ++dval;
+            return *this;
+        }
+
+        elem operator++ (int) {
+            assert(t != vtype::STR);
+            elem tmp = *this;
+            ++dval;
+            return tmp;
+        }
+
+        elem& operator-- () {
+            assert(t != vtype::STR);
+            --dval;
+            return *this;
+        }
+
+        elem operator-- (int) {
+            assert(t != vtype::STR);
+            elem tmp = *this;
+            --dval;
+            return tmp;
+        }
+
+        template<typename T>
+        elem operator+ (const T& rht) const {
+            elem e = *this;
+            e += rht;
+            return e;
+        }
+
+        template<typename T>
+        elem operator- (const T& rht) const {
+            elem e = *this;
+            e -= rht;
+            return e;
+        }
+
+        template<typename T>
+        elem operator* (const T& rht) const {
+            elem e = *this;
+            e *= rht;
+            return e;
+        }
+
+        template<typename T>
+        elem operator/ (const T& rht) const {
+            elem e = *this;
+            e /= rht;
+            return e;
+        }
+    };
+    using evType = elem::vtype;
+    std::ostream& operator<< (std::ostream& os, const elem& e);
+}
+
+namespace std {
+    template<>
+    struct hash<MACHINE_LEARNING::elem> {
+        size_t operator()(const MACHINE_LEARNING::elem& e) const;
     };
 }

@@ -169,7 +169,7 @@ namespace MACHINE_LEARNING {
         pretty_print("", '*', 58, '*');
     }
 
-    void LinearRegression::fit(const DataFrame<double>& x, const DataFrame<double>& y, const uint8_t verbose) {
+    void LinearRegression::fit(const DataFrame<elem>& x, const DataFrame<elem>& y, const uint8_t verbose) {
         this->x = x.values(), this->y = y.values();
         this->x.addCol(std::vector<double>(x.rowNum(), 1.0).data());
         this->w = Matrix<double>(std::vector<std::vector<double>>(this->x.colNum(), std::vector<double>(1, 0.0)));
