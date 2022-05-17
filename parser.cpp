@@ -15,7 +15,7 @@ namespace MACHINE_LEARNING {
                 if (rows == -1) df.colNameMapping(col.c_str(), cnt++);
                 else df.insert(rows, cnt++, col.c_str());
             }
-            if (rows == -1) cols = cnt;
+            if (rows == -1) cols = cnt, df.init_ind2name(cols);
             ++rows;
         }
     }

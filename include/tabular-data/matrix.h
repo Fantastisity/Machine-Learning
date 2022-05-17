@@ -11,18 +11,8 @@ namespace MACHINE_LEARNING {
     class Matrix {
         template<typename R>
         friend class DataFrame;
-
-        using elemType = T;
-
-        template<typename R>
-        struct is_mat {
-            const static bool val = 0;
-        };
-
-        template<>
-        struct is_mat<Matrix> {
-            const static bool val = 1;
-        };
+        template <typename>
+        friend class Matrix;
         
         T* mat = nullptr;
         size_t row = 0, col = 0, cap;
@@ -34,29 +24,28 @@ namespace MACHINE_LEARNING {
                 return *this;
             }
 
-            void deepCopy(const std::vector<std::vector<T>>&& Mat) {
+            template<typename R>
+            void deepCopy(const std::vector<std::vector<R>>&& Mat) {
                 mat = (T*) malloc(sizeof(T) * cap);
                 if (!mat) {
                     std::cerr << "error malloc\n"; exit(1);
                 }
-                for (size_t i = 0; i < row; ++i) {
+                for (size_t i = 0; i < row; ++i) 
                     std::copy(Mat[i].data(), Mat[i].data() + col, mat + i * col);
-                }
             }
 
-            void deepCopy(typename std::initializer_list<std::initializer_list<T>>::iterator matIter) {
+            template<typename R>
+            void deepCopy(typename std::initializer_list<std::initializer_list<R>>::iterator matIter) {
                 mat = (T*) malloc(sizeof(T) * cap);
                 if (!mat) {
                     std::cerr << "error malloc\n"; exit(1);
                 }
-                for (size_t i = 0; i < row; ++i) {
+                for (size_t i = 0; i < row; ++i, ++matIter) 
                     std::copy(matIter->begin(), matIter->end(), mat + i * col);
-                    ++matIter;
-                }
             }
 
-            void deepCopy(T* Mat) {
-                if (mat == Mat) return;
+            template<typename R>
+            void deepCopy(R* Mat) {
                 mat = (T*) malloc(sizeof(T) * cap);
                 if (!mat) {
                     std::cerr << "error malloc\n"; exit(1);
@@ -88,40 +77,47 @@ namespace MACHINE_LEARNING {
                 }
             }
 
-            Matrix(T** Mat, const size_t r, const size_t c) {
+            template<typename R>
+            Matrix(R** Mat, const size_t r, const size_t c) {
                 row = r, col = c, cap = r * c;
                 deepCopy(Mat);
             }
 
-            Matrix(const std::vector<std::vector<T>>&& Mat) {
+            template<typename R>
+            Matrix(const std::vector<std::vector<R>>&& Mat) {
                 row = Mat.size(), col = Mat[0].size(), cap = row * col;
-                deepCopy(std::forward<const std::vector<std::vector<T>>>(Mat));
+                deepCopy(std::forward<const std::vector<std::vector<R>>>(Mat));
             }
 
-            Matrix(const std::initializer_list<std::initializer_list<T>>&& Mat) {
+            template<typename R>
+            Matrix(const std::initializer_list<std::initializer_list<R>>&& Mat) {
                 row = Mat.size(), col = (*Mat.begin()).size(), cap = row * col;
                 deepCopy(Mat.begin());
             }
 
-            Matrix(const Matrix& m) {
+            template<typename R>
+            Matrix(const Matrix<R>& m) {
                 row = m.row, col = m.col, cap = row * col;
                 deepCopy(m.mat);
             }
 
-            Matrix(Matrix&& m) {
+            template<typename R>
+            Matrix(Matrix<R>&& m) {
                 row = m.row, col = m.col, cap = row * col;
                 deepCopy(m.mat);
                 if (m.mat) free(m.mat), m.mat = nullptr;
             }
 
-            auto& operator= (const Matrix& m) {
+            template<typename R>
+            auto& operator= (const Matrix<R>& m) {
                 dealloc();
                 row = m.row, col = m.col, cap = row * col;
                 deepCopy(m.mat);
                 return *this;
             }
             
-            auto& operator= (Matrix&& m) {
+            template<typename R>
+            auto& operator= (Matrix<R>&& m) {
                 dealloc();
                 row = m.row, col = m.col, cap = row * col;
                 deepCopy(m.mat);
@@ -129,14 +125,16 @@ namespace MACHINE_LEARNING {
                 return *this;
             }
 
-            bool operator== (const Matrix& m) const {
+            template<typename R>
+            bool operator== (const Matrix<R>& m) const {
                 for (size_t i = 0; i < row; ++i)
                     for (size_t j = 0; j < col; ++j)
                         if (mat[i * col + j] != m.mat[i * col + j]) return 0;
                 return 1;
             }
 
-            bool operator!= (const Matrix& m) const {
+            template<typename R>
+            bool operator!= (const Matrix<R>& m) const {
                 return !(*this == m);
             }
 
@@ -160,7 +158,8 @@ namespace MACHINE_LEARNING {
                 mat[r * col + c] = std::forward<R>(val);
             }
 
-            void addCol(T* c) {
+            template<typename R>
+            void addCol(R* c) {
                 if (row * ++col >= cap) resize(row * col);
                 T* m = (T*) malloc(sizeof(T) * row * col);
                 for (size_t i = 0, cnt = 0; i < row; ++i) {
@@ -199,7 +198,8 @@ namespace MACHINE_LEARNING {
                 *this = (*this)(rangeSlicer(row), ptrSlicer(ind, col - n));
             }
 
-            void concat(const Matrix& Mat, bool is_row) {
+            template<typename R>
+            void concat(const Matrix<R>& Mat, bool is_row) {
                 if (is_row) {
                     assert(col == Mat.col);
                     if ((row + Mat.row) * col >= cap) resize((row + Mat.row) * col);
@@ -219,17 +219,25 @@ namespace MACHINE_LEARNING {
                 }
             }
 
+            template<typename R>
+            Matrix<R> asType() {
+                Matrix<R> m(row * col);
+                for (size_t i = 0; i < row; ++i)
+                    for (size_t j = 0; j < col; ++j) {
+                        m(i, j) = static_cast<R>(mat[i * col + j]);
+                    }
+                return m;
+            }
+
             Matrix gen_identity(size_t n) {
-                Matrix m(n, n);
-                for (int i = 0; i < n; ++i) m[i * n + i] = 1;
+                Matrix m(n * n);
+                for (int i = 0; i < n; ++i) m(i, i) = 1;
                 return m;
             }
 
             Matrix inverse() {
                 assert(row == col);
                 Matrix<T> m = *this, idm = gen_identity(row);
-
-                
                 return NULL;
             }
 
@@ -305,9 +313,14 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename R>
-            auto operator*= (R&& rht) const -> 
-            typename std::enable_if<is_mat<typename std::remove_reference<R>::type>::val, Matrix>::type {
-                *this = *this * std::forward<R>(rht);
+            auto operator*= (Matrix<R>&& rht) const {
+                *this = *this * std::move(rht);
+                return *this;
+            }
+
+            template<typename R>
+            auto operator*= (Matrix<R>& rht) const {
+                *this = *this * rht;
                 return *this;
             }
 

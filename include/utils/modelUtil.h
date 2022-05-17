@@ -162,8 +162,8 @@ namespace MACHINE_LEARNING {
                 return res;
             }
 
-            template<typename T>
-            double RMSE(const Matrix<T>& ypred, const Matrix<T>& ytest) {
+            template<typename T, typename R>
+            double RMSE(const Matrix<T>& ypred, const Matrix<R>& ytest) {
                 auto tmp = ypred - ytest;
                 ll n = ypred.rowNum();
                 return std::sqrt((tmp.trans() * tmp / n)(0, 0));

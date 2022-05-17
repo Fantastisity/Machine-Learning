@@ -178,7 +178,7 @@ namespace MACHINE_LEARNING {
         if (verbose) print_weights();
     }
 
-    Matrix<double> LinearRegression::predict(const DataFrame<double>& xtest) {
+    Matrix<double> LinearRegression::predict(const DataFrame<elem>& xtest) {
         auto tmp = xtest.values();
         tmp.addCol(std::vector<double>(tmp.rowNum(), 1.0).data());
         return tmp * w;

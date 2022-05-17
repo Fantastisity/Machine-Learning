@@ -6,13 +6,14 @@
 namespace MACHINE_LEARNING {
     template<typename T = elem>
     class DataFrame {
+        friend class Parser;
         Matrix<T> dt;
         std::unordered_map<const char*, size_t, CstrFunctor, CstrFunctor> name2ind;
         char** ind2name = nullptr;
 
         void init_ind2name(size_t n, bool assign = 1) {
             if (ind2name) {
-                for (size_t i = 0, ncol = dt.col; i < ncol; ++i) free(ind2name[i]);
+                for (size_t i = 0; i < dt.col; ++i) free(ind2name[i]);
                 free(ind2name);
             }
             ind2name = (char**) malloc(n * sizeof(char*));
@@ -30,13 +31,12 @@ namespace MACHINE_LEARNING {
         }
 
         void dealloc() {
-            dt.dealloc();
             if (ind2name) {
-                for (auto& [k, v] : name2ind) free(const_cast<char*>(k));
-                for (size_t i = 0, ncol = dt.col; i < ncol; ++i) free(ind2name[i]);
+                for (size_t i = 0; i < dt.col; ++i) free(ind2name[i]);
                 free(ind2name);
                 ind2name = nullptr;
             }
+            dt.dealloc();
         }
         public:
             DataFrame(size_t cap = 1000, const std::vector<std::string>&& colnames = {}) : dt(cap) {
@@ -231,14 +231,7 @@ namespace MACHINE_LEARNING {
             }
 
             void colNameMapping(const char* name, size_t ind) {
-                if (!ind2name) {
-                    ind2name = (char**) malloc(colNum() * sizeof(char*));
-                    if (!ind2name) {
-                        std::cerr << "error malloc\n"; exit(1);
-                    }
-                } else if (ind >= colNum()) resize_ind2name(ind << 1);
-                char* tmp = strdup(name);
-                name2ind[ind2name[ind] = tmp] = ind;
+                name2ind[strdup(name)] = ind;
             }
 
             const size_t rowNum() const {
@@ -268,7 +261,7 @@ namespace MACHINE_LEARNING {
     template<typename R>
     std::ostream& operator<< (std::ostream& os, const DataFrame<R>& Df) {
         if (Df.ind2name) {
-            for (auto* i : Df.ind2name) os << i << " ";
+            for (size_t i = 0, ncol = Df.colNum(); i < ncol; ++i) os << Df.ind2name[i] << " ";
             puts("");
         }
         os << Df.dt;

@@ -23,6 +23,6 @@ namespace MACHINE_LEARNING {
 
             void fit(const DataFrame<elem>& x, const DataFrame<elem>& y, const uint8_t verbose = 0);
 
-            Matrix<double> predict(const DataFrame<double>& xtest);
+            Matrix<double> predict(const DataFrame<elem>& xtest);
     };
 }
