@@ -133,7 +133,7 @@ namespace MACHINE_LEARNING {
             auto abs(const Matrix<T>& m) 
             -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
                 size_t r = m.rowNum(), c = m.colNum();
-                Matrix<T> mat(r * c);
+                Matrix<T> mat(r, c);
                 for (size_t i = 0; i < r; ++i)
                     for (size_t j = 0; j < c; ++j)
                         mat.insert(i, j, m(i, j) < 0 ? -m(i, j) : m(i, j));
@@ -144,7 +144,7 @@ namespace MACHINE_LEARNING {
             auto sign(const Matrix<T>& m) 
             -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
                 size_t r = m.rowNum(), c = m.colNum();
-                Matrix<T> mat(r * c);
+                Matrix<T> mat(r, c);
                 for (size_t i = 0; i < r; ++i)
                     for (size_t j = 0; j < c; ++j)
                         mat.insert(i, j, m(i, j) < 0 ? -1 : (!mat(i, j) ? 0 : 1));
@@ -164,7 +164,13 @@ namespace MACHINE_LEARNING {
 
             template<typename T, typename R>
             double RMSE(const Matrix<T>& ypred, const Matrix<R>& ytest) {
-                auto tmp = ypred - ytest;
+                Matrix<double> tmp;
+                if constexpr (std::is_same<T, double>::value && std::is_same<R, double>::value) 
+                    tmp = ypred - ytest;
+                else if constexpr (std::is_same<T, elem>::value && std::is_same<R, elem>::value) 
+                    tmp = ypred.template asType<double>() - ytest.template asType<double>();
+                else if constexpr (std::is_same<T, elem>::value) tmp = ypred.template asType<double>() - ytest;
+                else tmp = ypred - ytest.template asType<double>();
                 ll n = ypred.rowNum();
                 return std::sqrt((tmp.trans() * tmp / n)(0, 0));
             }
@@ -192,20 +198,20 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename U>
-            auto cross_validation(U& estimator, DataFrame<elem>& X, DataFrame<elem>& Y, size_t k = 5) -> 
+            auto cross_validation(U& estimator, Matrix<elem>&& X, Matrix<elem>&& Y, size_t k = 5) -> 
             typename std::enable_if<isModel<U>::val, double>::type {
                 if (k > X.rowNum()) k = 1;
                 auto [indTrain, indTest, range, n] = k_fold(k, X.rowNum()); 
                 double score = 0;
-
+                auto x = X.template asType<double>(), y = Y.template asType<double>();
                 for (size_t i = 0; i < k; ++i) {
-                    auto xtrain = X.iloc(ptrSlicer(indTrain + i * n * (k - 1), range[i << 1]), rangeSlicer(X.colNum())), 
-                         ytrain = X.iloc(ptrSlicer(indTrain + i * n * (k - 1), range[i << 1]), rangeSlicer(Y.colNum())),
-                         xtest = X.iloc(ptrSlicer(indTest + i * n, range[(i << 1) + 1]), rangeSlicer(X.colNum())), 
-                         ytest = Y.iloc(ptrSlicer(indTest + i * n, range[(i << 1) + 1]), rangeSlicer(Y.colNum()));
+                    auto xtrain = x(ptrSlicer(indTrain + i * n * (k - 1), range[i << 1]), rangeSlicer(x.colNum())), 
+                         ytrain = x(ptrSlicer(indTrain + i * n * (k - 1), range[i << 1]), rangeSlicer(y.colNum())),
+                         xtest = y(ptrSlicer(indTest + i * n, range[(i << 1) + 1]), rangeSlicer(x.colNum())), 
+                         ytest = y(ptrSlicer(indTest + i * n, range[(i << 1) + 1]), rangeSlicer(y.colNum()));
                     estimator.fit(xtrain, ytrain);
                     estimator.predict(xtest);
-                    score += RMSE(estimator.predict(xtest), ytest.values());
+                    score += RMSE(estimator.predict(xtest), ytest);
                 }
                 free(indTrain), free(indTest), free(range);
                 return score / k;

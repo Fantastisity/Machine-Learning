@@ -34,6 +34,13 @@ namespace MACHINE_LEARNING {
             return *end == '\0';
         }
 
+        template<typename T, typename R>
+        static void conv_type(T* res, R* mat, const size_t cap) {
+            for (size_t i = 0; i < cap; ++i) {
+                res[i] = static_cast<T>(mat[i]);
+            }
+        }
+
         template<typename T>
         struct isPTR {
             const static bool val = 0;

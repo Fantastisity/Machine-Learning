@@ -14,9 +14,7 @@ namespace MACHINE_LEARNING {
 
             void gradient_descent();
         public:
-            explicit 
             LinearRegression();
-
             void print_params();
 
             void print_weights();

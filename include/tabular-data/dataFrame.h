@@ -4,7 +4,7 @@
 #endif
 
 namespace MACHINE_LEARNING {
-    template<typename T = elem>
+    template<typename T = double>
     class DataFrame {
         friend class Parser;
         Matrix<T> dt;
@@ -17,6 +17,7 @@ namespace MACHINE_LEARNING {
                 free(ind2name);
             }
             ind2name = (char**) malloc(n * sizeof(char*));
+            dt.set_col(n);
             if (!ind2name) {
                 std::cerr << "error malloc\n"; exit(1);
             }
@@ -32,7 +33,9 @@ namespace MACHINE_LEARNING {
 
         void dealloc() {
             if (ind2name) {
-                for (size_t i = 0; i < dt.col; ++i) free(ind2name[i]);
+                for (size_t i = 0; i < dt.col; ++i) {
+                    if (ind2name[i]) free(ind2name[i]), ind2name[i] = nullptr;
+                }
                 free(ind2name);
                 ind2name = nullptr;
             }
@@ -112,7 +115,7 @@ namespace MACHINE_LEARNING {
                 if (!df.name2ind.empty()) {
                     name2ind = df.name2ind;
                     init_ind2name(dt.col, 0);
-                    std::copy(df.ind2name, df.ind2name + dt.col, ind2name);
+                    for (size_t i = 0; i < dt.col; ++i) ind2name[i] = strdup(df.ind2name[i]);
                 }
             }
             DataFrame(DataFrame&& df) : dt(std::move(df.dt)) {
@@ -259,7 +262,7 @@ namespace MACHINE_LEARNING {
     };
 
     template<typename R>
-    std::ostream& operator<< (std::ostream& os, const DataFrame<R>& Df) {
+    inline std::ostream& operator<< (std::ostream& os, const DataFrame<R>& Df) {
         if (Df.ind2name) {
             for (size_t i = 0, ncol = Df.colNum(); i < ncol; ++i) os << Df.ind2name[i] << " ";
             puts("");

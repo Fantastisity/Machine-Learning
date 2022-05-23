@@ -11,7 +11,7 @@ namespace MACHINE_LEARNING {
     }
 
     auto LinearRegression::loss() {
-        auto tmp = x * w - y, l = tmp.trans() * tmp * 0.5;
+        Matrix<double> tmp = x * w - y, l = tmp.trans() * tmp * 0.5;
         switch (r) {
             case None:
                 break;
@@ -170,7 +170,7 @@ namespace MACHINE_LEARNING {
     }
 
     void LinearRegression::fit(const DataFrame<elem>& x, const DataFrame<elem>& y, const uint8_t verbose) {
-        this->x = x.values(), this->y = y.values();
+        this->x = x.values().template asType<double>(), this->y = y.values().template asType<double>();
         this->x.addCol(std::vector<double>(x.rowNum(), 1.0).data());
         this->w = Matrix<double>(std::vector<std::vector<double>>(this->x.colNum(), std::vector<double>(1, 0.0)));
         if (verbose == 2) print_params(), puts("");
@@ -179,7 +179,7 @@ namespace MACHINE_LEARNING {
     }
 
     Matrix<double> LinearRegression::predict(const DataFrame<elem>& xtest) {
-        auto tmp = xtest.values();
+        auto tmp = xtest.values().template asType<double>();
         tmp.addCol(std::vector<double>(tmp.rowNum(), 1.0).data());
         return tmp * w;
     }
