@@ -78,8 +78,8 @@ namespace MACHINE_LEARNING {
                         #ifdef WRITE_TO_FILE
                             output << cnt++ << '\t' << std::fixed << l;
                         #endif
-                        auto x_t = x(rangeSlicer(j, j + 1), rangeSlicer(0, x.colNum())),
-                             y_t = y(rangeSlicer(j, j + 1), rangeSlicer(0, y.colNum()));
+                        auto x_t = x(rngSlicer(j, j + 1), rngSlicer(0, x.colNum())),
+                             y_t = y(rngSlicer(j, j + 1), rngSlicer(0, y.colNum()));
                         w -= gradient(x_t, y_t) * eta;
                     }
                 }
@@ -110,8 +110,8 @@ namespace MACHINE_LEARNING {
                             output << cnt++ << '\t' << std::fixed << l;
                         #endif
                         num = std::min(static_cast<size_t>(batch_size), n - j);
-                        auto x_t = x(ptrSlicer(ind + j, num), rangeSlicer(x.colNum())), 
-                                y_t = y(ptrSlicer(ind + j,num), rangeSlicer(y.colNum()));
+                        auto x_t = x(ptrSlicer(ind + j, num), rngSlicer(x.colNum())), 
+                                y_t = y(ptrSlicer(ind + j,num), rngSlicer(y.colNum()));
                         w -= gradient(x_t, y_t) * eta;
                     }
                 }
@@ -167,20 +167,5 @@ namespace MACHINE_LEARNING {
         pretty_print("", '*', 58, '*');
         for (size_t i = 0, r = w.rowNum(); i < r; ++i) pretty_print(i, ' ', 50, w(i, 0));
         pretty_print("", '*', 58, '*');
-    }
-
-    void LinearRegression::fit(const DataFrame<elem>& x, const DataFrame<elem>& y, const uint8_t verbose) {
-        this->x = x.values().template asType<double>(), this->y = y.values().template asType<double>();
-        this->x.addCol(std::vector<double>(x.rowNum(), 1.0).data());
-        this->w = Matrix<double>(std::vector<std::vector<double>>(this->x.colNum(), std::vector<double>(1, 0.0)));
-        if (verbose == 2) print_params(), puts("");
-        gradient_descent();
-        if (verbose) print_weights();
-    }
-
-    Matrix<double> LinearRegression::predict(const DataFrame<elem>& xtest) {
-        auto tmp = xtest.values().template asType<double>();
-        tmp.addCol(std::vector<double>(tmp.rowNum(), 1.0).data());
-        return tmp * w;
     }
 }

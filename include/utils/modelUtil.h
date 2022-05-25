@@ -11,13 +11,13 @@ namespace MACHINE_LEARNING {
     class ModelUtil : public UtilBase {
         template <typename...> using Void = void;
 
-        template<typename U, typename R = void>
+        template<typename U, typename R, typename T = void>
         struct isModel {
             const static bool val = 0;
         };
 
-        template<typename U>
-        struct isModel<U, Void<decltype(&U::fit)>> {
+        template<typename U, typename R>
+        struct isModel<U, R, Void<decltype(&U::template fit<R, R>)>> {
             const static bool val = 1;
         };
 
@@ -44,7 +44,7 @@ namespace MACHINE_LEARNING {
             };
 
             template<typename U>
-            struct isDataframe<U, Void<decltype(&U::loc)>> {
+            struct isDataframe<U, Void<decltype(&U::addFeature)>> {
                 const static bool val = 1;
             };
             
@@ -123,10 +123,10 @@ namespace MACHINE_LEARNING {
             auto train_test_split(DataFrame<elem> X, DataFrame<elem> Y, const float test_size = 0.25, const bool shuffle = 0) {
                 size_t row = X.rowNum(), testRow = row * test_size;
                 if (shuffle) X.shuffle(), Y.shuffle();
-                return std::make_tuple(X.iloc(rangeSlicer(row - testRow),      rangeSlicer(X.colNum())), 
-                                       X.iloc(rangeSlicer(row - testRow, row), rangeSlicer(X.colNum())), 
-                                       Y.iloc(rangeSlicer(row - testRow),      rangeSlicer(Y.colNum())), 
-                                       Y.iloc(rangeSlicer(row - testRow, row), rangeSlicer(Y.colNum())));
+                return std::make_tuple(X.iloc(rngSlicer(row - testRow),      rngSlicer(X.colNum())), 
+                                       X.iloc(rngSlicer(row - testRow, row), rngSlicer(X.colNum())), 
+                                       Y.iloc(rngSlicer(row - testRow),      rngSlicer(Y.colNum())), 
+                                       Y.iloc(rngSlicer(row - testRow, row), rngSlicer(Y.colNum())));
             }
 
             template<typename T>
@@ -171,8 +171,7 @@ namespace MACHINE_LEARNING {
                     tmp = ypred.template asType<double>() - ytest.template asType<double>();
                 else if constexpr (std::is_same<T, elem>::value) tmp = ypred.template asType<double>() - ytest;
                 else tmp = ypred - ytest.template asType<double>();
-                ll n = ypred.rowNum();
-                return std::sqrt((tmp.trans() * tmp / n)(0, 0));
+                return std::sqrt((tmp.trans() * tmp / ypred.rowNum())(0, 0));
             }
 
             auto k_fold(const size_t k, const size_t sample_size) {
@@ -197,43 +196,54 @@ namespace MACHINE_LEARNING {
                 return std::make_tuple(indTrain, indTest, range, n);
             }
 
-            template<typename U>
-            auto cross_validation(U& estimator, Matrix<elem>&& X, Matrix<elem>&& Y, size_t k = 5) -> 
-            typename std::enable_if<isModel<U>::val, double>::type {
+            template<typename M>
+            auto cross_validation(M&& estimator, DataFrame<elem>& X, DataFrame<elem>& Y, size_t k = 5) -> 
+            typename std::enable_if<isModel<typename std::remove_reference<M>::type, DataFrame<elem>>::val, double>::type {
                 if (k > X.rowNum()) k = 1;
                 auto [indTrain, indTest, range, n] = k_fold(k, X.rowNum()); 
                 double score = 0;
-                auto x = X.template asType<double>(), y = Y.template asType<double>();
-                for (size_t i = 0; i < k; ++i) {
-                    auto xtrain = x(ptrSlicer(indTrain + i * n * (k - 1), range[i << 1]), rangeSlicer(x.colNum())), 
-                         ytrain = x(ptrSlicer(indTrain + i * n * (k - 1), range[i << 1]), rangeSlicer(y.colNum())),
-                         xtest = y(ptrSlicer(indTest + i * n, range[(i << 1) + 1]), rangeSlicer(x.colNum())), 
-                         ytest = y(ptrSlicer(indTest + i * n, range[(i << 1) + 1]), rangeSlicer(y.colNum()));
+                auto x = X.values().template asType<double>(), y = Y.values().template asType<double>();
+                for (size_t i = 0, xcol = X.colNum(), ycol = Y.colNum(); i < k; ++i) {
+                    auto xtrain = x(ptrSlicer(indTrain + i * n * (k - 1), range[i << 1]), rngSlicer(xcol)), 
+                         ytrain = y(ptrSlicer(indTrain + i * n * (k - 1), range[i << 1]), rngSlicer(ycol)),
+                         xtest  = x(ptrSlicer(indTest + i * n, range[(i << 1) + 1]),      rngSlicer(xcol)), 
+                         ytest  = y(ptrSlicer(indTest + i * n, range[(i << 1) + 1]),      rngSlicer(ycol));
                     estimator.fit(xtrain, ytrain);
-                    estimator.predict(xtest);
                     score += RMSE(estimator.predict(xtest), ytest);
                 }
                 free(indTrain), free(indTest), free(range);
                 return score / k;
             }
 
-            template<typename U>
-            auto grid_search(U& estimator, DataFrame<elem>& X, DataFrame<elem>& Y) -> 
-            typename std::enable_if<isModel<U>::val>::type {
-                std::vector<double> tmp;
-                std::vector<std::vector<double>> param_comb, param_grid = estimator.p.gen_param_grid();
+            template<typename M>
+            auto grid_search(M&& estimator, DataFrame<elem>& X, DataFrame<elem>& Y) -> 
+            typename std::enable_if<isModel<typename std::remove_reference<M>::type, DataFrame<elem>>::val, 
+                     std::pair<std::vector<std::pair<size_t, double>>, double>>::type {
+                std::vector<std::pair<size_t, double>> tmp;
+                std::vector<std::vector<std::pair<size_t, double>>> param_comb;
                 auto gen_comb = [&](size_t pos, auto&& gen_comb) {
-                    if (tmp.size() == param_grid.size()) {
+                    if (tmp.size() == estimator.varying_params.size()) {
                         param_comb.push_back(tmp);
                         return;
                     }
-                    for (auto& i : param_comb[pos]) {
-                        tmp.push_back(i);
+                    for (auto& i : estimator.varying_params[pos].second) {
+                        tmp.push_back(std::make_pair(estimator.varying_params[pos].first, i));
                         gen_comb(pos + 1, gen_comb);
                         tmp.pop_back();
                     }
                 };
                 gen_comb(0, gen_comb);
+
+                double best_err = -1;
+                size_t best_ind = -1;
+                for (size_t i = 0, n = param_comb.size(); i < n; ++i) {
+                    estimator.set_params(param_comb[i]);
+                    double err = cross_validation(std::forward<M>(estimator), X, Y);
+                    if (best_err == -1 || best_err > err) {
+                        best_err = err, best_ind = i;
+                    }
+                }
+                return std::make_pair(param_comb[best_ind], best_err);
             }
     };
     extern ModelUtil modUtil;

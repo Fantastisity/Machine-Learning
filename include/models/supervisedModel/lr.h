@@ -19,8 +19,33 @@ namespace MACHINE_LEARNING {
 
             void print_weights();
 
-            void fit(const DataFrame<elem>& x, const DataFrame<elem>& y, const uint8_t verbose = 0);
+            template<typename T, typename R>
+            void fit(T&& x, R&& y, const uint8_t verbose = 0) {
+                if constexpr (ModelUtil::isDataframe<typename std::remove_reference<T>::type>::val) 
+                    this->x = x.values().template asType<double>();
+                else this->x = x;
 
-            Matrix<double> predict(const DataFrame<elem>& xtest);
+                this->x.addCol(std::vector<double>(x.rowNum(), 1.0).data());
+                this->w = Matrix<double>(std::vector<std::vector<double>>(this->x.colNum(), std::vector<double>(1, 0.0)));
+
+                if constexpr (ModelUtil::isDataframe<typename std::remove_reference<R>::type>::val) 
+                    this->y = y.values().template asType<double>();
+                else this->y = y;
+
+                if (verbose == 2) print_params(), puts("");
+                gradient_descent();
+                if (verbose) print_weights();
+            }
+
+            template<typename T>
+            Matrix<double> predict(T&& xtest) {
+                Matrix<double> tmp{0};
+                if constexpr (ModelUtil::isDataframe<typename std::remove_reference<T>::type>::val) 
+                    tmp = xtest.values().template asType<double>();
+                else tmp = xtest;
+                
+                tmp.addCol(std::vector<double>(tmp.rowNum(), 1.0).data());
+                return tmp * w;
+            }
     };
 }

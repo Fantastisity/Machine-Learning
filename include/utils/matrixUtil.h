@@ -24,7 +24,7 @@ namespace MACHINE_LEARNING {
         slice(T* start, const size_t end) : start(start), end(start + end), size(this->end - start) {}
     };
 
-    using rangeSlicer = slice<size_t>; 
+    using rngSlicer = slice<size_t>; 
     using ptrSlicer = slice<size_t*>;
 
     struct MatrixUtil : public UtilBase {

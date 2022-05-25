@@ -149,13 +149,10 @@ namespace MACHINE_LEARNING {
                 std::cout << row << " * " << col << '\n';
             }
 
-            void set_col(size_t c) {
-                col = c;
-            }
-
             template<typename R>
             void insert(const size_t r, const size_t c, R&& val) {
                 if (row <= r) row = r + 1;
+                if (col <= c) col = c + 1;
                 if (row * col >= cap) resize((row * col) << 1);
                 mat[r * col + c] = std::forward<R>(val);
             }
@@ -181,7 +178,7 @@ namespace MACHINE_LEARNING {
                     if (i == c) continue;
                     ind[p++] = i;
                 }
-                *this = (*this)(rangeSlicer(row), ptrSlicer(ind, col - 1));
+                *this = (*this)(rngSlicer(row), ptrSlicer(ind, col - 1));
             }
 
             void dropCol(size_t* c, size_t n) {
@@ -195,7 +192,7 @@ namespace MACHINE_LEARNING {
                     for (; j < n; ++j) if (c[j] == i) break;
                     if (j == n) ind[p++] = i;
                 }
-                *this = (*this)(rangeSlicer(row), ptrSlicer(ind, col - n));
+                *this = (*this)(rngSlicer(row), ptrSlicer(ind, col - n));
             }
 
             void concat(const Matrix& Mat, bool is_row) {

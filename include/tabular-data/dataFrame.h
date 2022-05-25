@@ -4,7 +4,7 @@
 #endif
 
 namespace MACHINE_LEARNING {
-    template<typename T = double>
+    template<typename T = elem>
     class DataFrame {
         friend class Parser;
         Matrix<T> dt;
@@ -17,7 +17,6 @@ namespace MACHINE_LEARNING {
                 free(ind2name);
             }
             ind2name = (char**) malloc(n * sizeof(char*));
-            dt.set_col(n);
             if (!ind2name) {
                 std::cerr << "error malloc\n"; exit(1);
             }
@@ -249,7 +248,7 @@ namespace MACHINE_LEARNING {
                 dt.dim();
             }
 
-            auto values() const {
+            Matrix<T> values() const {
                 return dt;
             }
 

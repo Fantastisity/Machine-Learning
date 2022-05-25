@@ -10,16 +10,16 @@
 namespace MACHINE_LEARNING {
     class Parser {
         DataFrame<elem> df;
-        ll cols = 0, rows = -1;
+        ll cols = 0, rows = 0;
         public:
-            Parser(std::string&& filename, char delim = ',');
+            Parser(std::string&& filename, char delim = ',', bool ignore_header = 0);
 
             auto getX(size_t startCol, size_t range) {
-                return df.iloc(rangeSlicer(rows), rangeSlicer(startCol, startCol + range), 1);
+                return df.iloc(rngSlicer(rows), rngSlicer(startCol, startCol + range), 1);
             }
 
             auto getY(size_t tarCol) {
-                return df.iloc(rangeSlicer(rows), rangeSlicer(tarCol, tarCol + 1), 1);
+                return df.iloc(rngSlicer(rows), rngSlicer(tarCol, tarCol + 1), 1);
             }
 
             void head(size_t num = 5);

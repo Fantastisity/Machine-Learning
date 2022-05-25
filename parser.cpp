@@ -4,18 +4,20 @@
 #endif
 
 namespace MACHINE_LEARNING {
-    Parser::Parser(std::string&& filename, char delim) {
+    Parser::Parser(std::string&& filename, char delim, bool ignore_header) {
         std::ifstream input(filename);
         std::string line, col;
-        int cnt;
+        int cnt = 0;
+        if (!ignore_header) {
+            getline(input, line);
+            std::stringstream ss(line);
+            while (getline(ss, col, delim)) df.colNameMapping(col.c_str(), cnt++);
+            df.init_ind2name(cols = cnt);
+        }
         while (getline(input, line)) {
             std::stringstream ss(line);
             cnt = 0;
-            while (getline(ss, col, delim)) {
-                if (rows == -1) df.colNameMapping(col.c_str(), cnt++);
-                else df.insert(rows, cnt++, col.c_str());
-            }
-            if (rows == -1) cols = cnt, df.init_ind2name(cols);
+            while (getline(ss, col, delim)) df.insert(rows, cnt++, col.c_str());
             ++rows;
         }
     }

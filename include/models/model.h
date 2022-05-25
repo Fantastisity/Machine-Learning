@@ -10,23 +10,8 @@ enum Regularizor { None, L1, L2, ENet };
 namespace MACHINE_LEARNING {
     class SupervisedModel {
         protected:
-            struct params {
-                std::vector<double> eta, lamb, alpha, eps, iter, batch_size, r, t;
-                auto gen_param_grid() {
-                    std::vector<std::vector<double>> v;
-                    if (!eta.empty()) v.push_back(eta);
-                    if (!lamb.empty()) v.push_back(lamb);
-                    if (!alpha.empty()) v.push_back(alpha);
-                    if (!eps.empty()) v.push_back(eps);
-                    if (!iter.empty()) v.push_back(iter);
-                    if (!batch_size.empty()) v.push_back(batch_size);
-                    if (!r.empty()) v.push_back(r);
-                    if (!t.empty()) v.push_back(t);
-                    return v;
-                }
-            };
             std::ofstream output;
-            params p;
+            std::vector<std::pair<size_t, std::vector<double>>> varying_params;
             Matrix<double> x{0}, y{0};
             double eta = 1e-9, lamb, alpha, eps = 1e-2;
             ll iter = 1000, batch_size;
@@ -37,21 +22,24 @@ namespace MACHINE_LEARNING {
                 this->eta = eta;
             }
             void set_eta(const std::initializer_list<double>&& eta) {
-                std::copy(eta.begin(), eta.end(), std::back_inserter(p.eta));
+                if (eta.size() == 1) this->eta = *eta.begin();
+                else varying_params.emplace_back(std::make_pair(0, eta));
             }
 
             void set_epsilon(const double eps) {
                 this->eps = eps;
             }
             void set_epsilon(const std::initializer_list<double>&& eps) {
-                std::copy(eps.begin(), eps.end(), std::back_inserter(p.eps));
+                if (eps.size() == 1) this->eps = *eps.begin();
+                else varying_params.emplace_back(std::make_pair(1, eps));
             }
 
             void set_iteration(const ll iter) {
                 this->iter = iter;
             }
             void set_iteration(const std::initializer_list<double>&& iter) {
-                std::copy(iter.begin(), iter.end(), std::back_inserter(p.iter));
+                if (iter.size() == 1) this->iter = *iter.begin();
+                else varying_params.emplace_back(std::make_pair(2, iter));
             }
 
             void set_regularizor(const Regularizor r, const double lamb = 1, const double alpha = 0.5) {
@@ -63,9 +51,12 @@ namespace MACHINE_LEARNING {
                 const std::initializer_list<double>&& r, 
                 const std::initializer_list<double>&& lamb = {1.0}, 
                 const std::initializer_list<double>&& alpha = {0.5}) {
-                std::copy(r.begin(), r.end(), std::back_inserter(p.r));
-                std::copy(lamb.begin(), lamb.end(), std::back_inserter(p.lamb));
-                std::copy(alpha.begin(), alpha.end(), std::back_inserter(p.alpha));
+                if (r.size() == 1) this->r = static_cast<Regularizor>((size_t) *r.begin());
+                else varying_params.emplace_back(std::make_pair(3, r));
+                if (lamb.size() == 1) this->lamb = *lamb.begin();
+                else varying_params.emplace_back(std::make_pair(4, lamb));
+                if (alpha.size() == 1) this->alpha = *alpha.begin();
+                else varying_params.emplace_back(std::make_pair(5, alpha));
             }
 
             void set_gd_type(const Type t, const ll batch_size = 64) {
@@ -73,8 +64,40 @@ namespace MACHINE_LEARNING {
                 this->batch_size = batch_size;
             }
             void set_gd_type(const std::initializer_list<double>&& t, const std::initializer_list<double>&& batch_size = {64}) {
-                std::copy(t.begin(), t.end(), std::back_inserter(p.t));
-                std::copy(batch_size.begin(), batch_size.end(), std::back_inserter(p.batch_size));
+                if (t.size() == 1) this->t = static_cast<Type>((size_t) *t.begin());
+                else varying_params.emplace_back(std::make_pair(6, t));
+                if (batch_size.size() == 1) this->batch_size = *batch_size.begin();
+                else varying_params.emplace_back(std::make_pair(7, batch_size));
+            }
+
+            void set_params(std::vector<std::pair<size_t, double>>& grid) {
+                for (auto& i : grid) {
+                    switch (i.first) {
+                        case 0:
+                            this->eta = i.second;
+                            break;
+                        case 1:
+                            this->eps = i.second;
+                            break;
+                        case 2:
+                            this->iter = i.second;
+                            break;
+                        case 3:
+                            this->r = static_cast<Regularizor>((size_t) i.second);
+                            break;
+                        case 4:
+                            this->lamb = i.second;
+                            break;
+                        case 5:
+                            this->alpha = i.second;
+                            break;
+                        case 6:
+                            this->t = static_cast<Type>((size_t) i.second);
+                            break;
+                        case 7:
+                            this->batch_size = i.second;
+                    } 
+                }
             }
     };
 }
