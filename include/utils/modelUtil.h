@@ -239,9 +239,7 @@ namespace MACHINE_LEARNING {
                 for (size_t i = 0, n = param_comb.size(); i < n; ++i) {
                     estimator.set_params(param_comb[i]);
                     double err = cross_validation(std::forward<M>(estimator), X, Y);
-                    if (best_err == -1 || best_err > err) {
-                        best_err = err, best_ind = i;
-                    }
+                    if (best_err == -1 || best_err > err) best_err = err, best_ind = i;
                 }
                 return std::make_pair(param_comb[best_ind], best_err);
             }

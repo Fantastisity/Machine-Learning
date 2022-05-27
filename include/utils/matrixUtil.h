@@ -51,9 +51,39 @@ namespace MACHINE_LEARNING {
             const static bool val = 1;
         };
 
+        template<typename T>
+        static void gaussian_elimination(T* a, T* b, const size_t n) {
+            for (size_t i = 0; i < n - 1; ++i) {
+                if (!partial_pivoting(a, b, i, n)) continue;
+                for (size_t j = i + 1; j < n; ++j) {
+                    double frac = 1.0 * a[i * n + i] / a[j * n + i];
+                    for (size_t k = i; k < n; ++k) 
+                        a[j * n + k] = a[j * n + k] * frac - a[i * n + k],
+                        b[j * n + k] = b[j * n + k] * frac - b[i * n + k];
+                }
+            }
+        }
+
+        template<typename T>
+        static void gaussian_jordan_elimination(T* a, T* b, const size_t n) {
+            for (size_t i = 0; i < n - 1; ++i) {
+                if (!a[i * n + i] && !partial_pivoting(a, b, i, n)) continue;
+                double frac = 1.0 / a[i * n + i];
+                for (size_t j = 0; j < n; ++j) a[i * n + j] *= frac, b[i * n + j] *= frac;
+                for (size_t j = i + 1; j < n; ++j) {
+                    double frac = 1.0 / a[j * n + i];
+                    for (size_t k = i; k < n; ++k) 
+                        a[j * n + k] = a[j * n + k] * frac - a[i * n + k], logger(a[j * n + k]),
+                        b[j * n + k] = b[j * n + k] * frac - b[i * n + k];
+                }
+            }
+            logger("last", a[n * n - 1]);
+            if (a[n * n - 1] > 1) b[n * n - 1] /= a[n * n - 1], a[n * n - 1] = 1;
+        }
+
         template<typename X, typename Y, typename Z>
         struct Mult {
-            static void mult(X* x, Y* y, Z*& res, size_t r, size_t k, size_t c) {
+            static void mult(X* x, Y* y, Z* res, size_t r, size_t k, size_t c) {
                 auto batch_mult = [&](size_t from, size_t to) {
                     for (size_t i = from; i < to; ++i)
                         for (size_t m = 0; m < k; ++m)
@@ -63,17 +93,16 @@ namespace MACHINE_LEARNING {
                 std::thread threads[pcnt - 1];
                 size_t batch = r / pcnt;
                 batch_mult(0, batch);
-                for (size_t i = 0, cnt = batch; i < pcnt - 1; ++i) {
+                for (size_t i = 0, cnt = batch; i < pcnt - 1; ++i, cnt += batch) {
                     threads[i] = std::thread(batch_mult, cnt, cnt + batch < r ? cnt + batch : r);
                     threads[i].join();
-                    cnt += batch;
                 }
             }
         };
 
         template<>
         struct Mult<double, double, double> {
-            static void mult(double* x, double* y, double*& res, size_t r, size_t k, size_t c) {
+            static void mult(double* x, double* y, double* res, size_t r, size_t k, size_t c) {
                 size_t end = c - c % 4;
                 for (size_t i = 0; i < r; ++i)
                     for (size_t j = 0; j < end; j += 4) {
@@ -91,7 +120,7 @@ namespace MACHINE_LEARNING {
 
         template<>
         struct Mult<float, float, float> {
-            static void mult(float* x, float* y, float*& res, size_t r, size_t k, size_t c) {
+            static void mult(float* x, float* y, float* res, size_t r, size_t k, size_t c) {
                 size_t end = c - c % 4;
                 for (size_t i = 0; i < r; ++i)
                     for (size_t j = 0; j < end; j += 4) {
@@ -109,7 +138,7 @@ namespace MACHINE_LEARNING {
 
         template<>
         struct Mult<int, int, int> {
-            static void mult(int* x, int* y, int*& res, size_t r, size_t k, size_t c) {
+            static void mult(int* x, int* y, int* res, size_t r, size_t k, size_t c) {
                 size_t end = c - c % 4;
                 for (size_t i = 0; i < r; ++i)
                     for (size_t j = 0; j < end; j += 4) {
@@ -127,7 +156,7 @@ namespace MACHINE_LEARNING {
 
         template<>
         struct Mult<double, int, double> {
-            static void mult(double* x, int* y, double*& res, size_t r, size_t k, size_t c) {
+            static void mult(double* x, int* y, double* res, size_t r, size_t k, size_t c) {
                 size_t end = c - c % 4;
                 for (size_t i = 0; i < r; ++i)
                     for (size_t j = 0; j < end; j += 4) {
@@ -146,14 +175,14 @@ namespace MACHINE_LEARNING {
 
         template<>
         struct Mult<int, double, double> {
-            static void mult(int* x, double* y, double*& res, size_t r, size_t k, size_t c) {
+            static void mult(int* x, double* y, double* res, size_t r, size_t k, size_t c) {
                 Mult<double, int, double>::mult(y, x, res, r, k, c);
             }
         };
 
         template<>
         struct Mult<double, float, double> {
-            static void mult(double* x, float* y, double*& res, size_t r, size_t k, size_t c) {
+            static void mult(double* x, float* y, double* res, size_t r, size_t k, size_t c) {
                 size_t end = c - c % 4;
                 for (size_t i = 0; i < r; ++i)
                     for (size_t j = 0; j < end; j += 4) {
@@ -171,14 +200,14 @@ namespace MACHINE_LEARNING {
 
         template<>
         struct Mult<float, double, double> {
-            static void mult(float* x, double* y, double*& res, size_t r, size_t k, size_t c) {
+            static void mult(float* x, double* y, double* res, size_t r, size_t k, size_t c) {
                 Mult<double, float, double>::mult(y, x, res, r, k, c);
             }
         };
 
         template<>
         struct Mult<float, int, float> {
-            static void mult(float* x, int* y, float*& res, size_t r, size_t k, size_t c) {
+            static void mult(float* x, int* y, float* res, size_t r, size_t k, size_t c) {
                 size_t end = c - c % 4;
                 for (size_t i = 0; i < r; ++i)
                     for (size_t j = 0; j < end; j += 4) {
@@ -197,10 +226,23 @@ namespace MACHINE_LEARNING {
 
         template<>
         struct Mult<int, float, float> {
-            static void mult(int* x, float* y, float*& res, size_t r, size_t k, size_t c) {
+            static void mult(int* x, float* y, float* res, size_t r, size_t k, size_t c) {
                 Mult<float, int, float>::mult(y, x, res, r, k, c);
             }
         };
+
+        private:
+            template<typename T>
+            static bool partial_pivoting(T* a, T* b, const size_t i, const size_t n) {
+                T tmp = a[i * n + i];
+                size_t swap_ind = -1;
+                for (size_t j = i + 1; j < n; ++j) 
+                    if (j == i + 1 || tmp < std::abs(a[j * n + i]))
+                        tmp = a[j * n + i], swap_ind = j;
+                if (!tmp) return 0;
+                for (size_t j = 0; j < n; ++j) std::swap(a[i * n + j], a[swap_ind * n + j]), std::swap(b[i * n + j], b[swap_ind * n + j]);
+                return 1;
+            }
     };
 
      struct CstrFunctor {

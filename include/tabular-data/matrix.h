@@ -223,16 +223,17 @@ namespace MACHINE_LEARNING {
                 return m;
             }
 
-            static Matrix gen_identity(size_t n) {
+            static Matrix eye(size_t n) {
                 Matrix m(n * n);
                 for (int i = 0; i < n; ++i) m(i, i) = 1;
                 return m;
             }
 
-            Matrix inverse() {
+            void inverse() {
                 assert(row == col);
-                Matrix<T> m = *this, idm = gen_identity(row);
-                return NULL;
+                Matrix m = *this, idm = eye(row);
+                MatrixUtil::gaussian_jordan_elimination(m.mat, idm.mat, row);
+                std::cout << m;
             }
 
             Matrix trans() {
