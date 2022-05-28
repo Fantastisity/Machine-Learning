@@ -107,6 +107,9 @@ namespace MACHINE_LEARNING {
                         else if (this->cnt <= 64) this->cnt = 64;
                         else this->cnt = 128;
                         size_t* remove_col = (size_t*) malloc(sizeof(size_t) * this->cnt);
+                        if (!remove_col) {
+                            std::cerr << "error malloc\n"; exit(1);
+                        }
                         for (size_t i = 0; i < n; ++i) {
                             ll val = 0;
                             for (size_t j = c - this->cnt; j < c; ++j) {
@@ -117,6 +120,7 @@ namespace MACHINE_LEARNING {
                             m.insert(i, c, this->reverse_mapping[val >> 1]);
                         }
                         m.dropFeature(remove_col, this->cnt);
+                        free(remove_col);
                     }
             };
 
@@ -180,7 +184,7 @@ namespace MACHINE_LEARNING {
                        * indTest = (size_t*) malloc(sizeof(size_t) * k * n),
                        * range = (size_t*) malloc(sizeof(size_t) * k * 2);
                 if (!indTrain || !indTest || !range) {
-                    std::cerr << "error realloc\n"; exit(1);
+                    std::cerr << "error malloc\n"; exit(1);
                 }
                 for (size_t i = 0, cntTrain, cntTest; i < k; ++i) {
                     cntTrain = 0, cntTest = 0;

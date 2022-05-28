@@ -56,6 +56,7 @@ namespace MACHINE_LEARNING {
             for (size_t i = 0; i < n - 1; ++i) {
                 if (!partial_pivoting(a, b, i, n)) continue;
                 for (size_t j = i + 1; j < n; ++j) {
+                    if (!a[j * n + i]) continue;
                     double frac = 1.0 * a[i * n + i] / a[j * n + i];
                     for (size_t k = i; k < n; ++k) 
                         a[j * n + k] = a[j * n + k] * frac - a[i * n + k],
@@ -66,19 +67,18 @@ namespace MACHINE_LEARNING {
 
         template<typename T>
         static void gaussian_jordan_elimination(T* a, T* b, const size_t n) {
-            for (size_t i = 0; i < n - 1; ++i) {
+            for (size_t i = 0; i < n; ++i) {
                 if (!a[i * n + i] && !partial_pivoting(a, b, i, n)) continue;
                 double frac = 1.0 / a[i * n + i];
                 for (size_t j = 0; j < n; ++j) a[i * n + j] *= frac, b[i * n + j] *= frac;
                 for (size_t j = i + 1; j < n; ++j) {
+                    if (!a[j * n + i]) continue;
                     double frac = 1.0 / a[j * n + i];
                     for (size_t k = i; k < n; ++k) 
-                        a[j * n + k] = a[j * n + k] * frac - a[i * n + k], logger(a[j * n + k]),
+                        a[j * n + k] = a[j * n + k] * frac - a[i * n + k],
                         b[j * n + k] = b[j * n + k] * frac - b[i * n + k];
                 }
             }
-            logger("last", a[n * n - 1]);
-            if (a[n * n - 1] > 1) b[n * n - 1] /= a[n * n - 1], a[n * n - 1] = 1;
         }
 
         template<typename X, typename Y, typename Z>
