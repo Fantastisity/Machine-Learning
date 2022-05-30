@@ -8,7 +8,7 @@
 #endif
 
 int main() {
-    using 
+    using
     MACHINE_LEARNING::Parser, 
     MACHINE_LEARNING::LinearRegression, 
     MACHINE_LEARNING::modUtil,

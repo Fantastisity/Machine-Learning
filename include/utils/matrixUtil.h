@@ -58,7 +58,7 @@ namespace MACHINE_LEARNING {
                 for (size_t j = i + 1; j < n; ++j) {
                     if (!a[j * n + i]) continue;
                     double frac = 1.0 * a[i * n + i] / a[j * n + i];
-                    for (size_t k = i; k < n; ++k) 
+                    for (size_t k = 0; k < n; ++k)
                         a[j * n + k] = a[j * n + k] * frac - a[i * n + k],
                         b[j * n + k] = b[j * n + k] * frac - b[i * n + k];
                 }
@@ -67,16 +67,29 @@ namespace MACHINE_LEARNING {
 
         template<typename T>
         static void gaussian_jordan_elimination(T* a, T* b, const size_t n) {
+            double tmp;
             for (size_t i = 0; i < n; ++i) {
                 if (!a[i * n + i] && !partial_pivoting(a, b, i, n)) continue;
-                double frac = 1.0 / a[i * n + i];
-                for (size_t j = 0; j < n; ++j) a[i * n + j] *= frac, b[i * n + j] *= frac;
+                if (a[i * n + i] != 1) {
+                    tmp = 1.0 / a[i * n + i];
+                    for (size_t j = 0; j < n; ++j) a[i * n + j] *= tmp, b[i * n + j] *= tmp;
+                }
                 for (size_t j = i + 1; j < n; ++j) {
                     if (!a[j * n + i]) continue;
-                    double frac = 1.0 / a[j * n + i];
-                    for (size_t k = i; k < n; ++k) 
-                        a[j * n + k] = a[j * n + k] * frac - a[i * n + k],
-                        b[j * n + k] = b[j * n + k] * frac - b[i * n + k];
+                    tmp = a[j * n + i];
+                    for (size_t k = 0; k < n; ++k) 
+                        a[j * n + k] -= a[i * n + k] * tmp,
+                        b[j * n + k] -= b[i * n + k] * tmp;
+                }
+            }
+
+            for (size_t i = n - 1; i; --i) {
+                if (a[i * n + i] != 1) continue;
+                for (size_t j = 0; j < i; ++j) {
+                    tmp = a[j * n + i];
+                    for (size_t k = 0; k < n; ++k) 
+                        a[j * n + k] -= a[i * n + k] * tmp,
+                        b[j * n + k] -= b[i * n + k] * tmp;
                 }
             }
         }

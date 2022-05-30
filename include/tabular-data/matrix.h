@@ -11,8 +11,10 @@ namespace MACHINE_LEARNING {
     class Matrix {
         template<typename R>
         friend class DataFrame;
+        
         template<typename>
         friend class Matrix;
+
         T* mat = nullptr;
         size_t row = 0, col = 0, cap = 0;
             template<typename F>
@@ -224,16 +226,16 @@ namespace MACHINE_LEARNING {
             }
 
             static Matrix eye(size_t n) {
-                Matrix m(n * n);
+                Matrix m(n, n);
                 for (int i = 0; i < n; ++i) m(i, i) = 1;
                 return m;
             }
 
-            void inverse() {
+            Matrix inverse() {
                 assert(row == col);
                 Matrix m = *this, idm = eye(row);
                 MatrixUtil::gaussian_jordan_elimination(m.mat, idm.mat, row);
-                std::cout << m;
+                return idm;
             }
 
             Matrix trans() {
