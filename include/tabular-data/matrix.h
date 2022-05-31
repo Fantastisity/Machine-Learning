@@ -234,7 +234,7 @@ namespace MACHINE_LEARNING {
             Matrix inverse() {
                 assert(row == col);
                 Matrix m = *this, idm = eye(row);
-                MatrixUtil::gaussian_jordan_elimination(m.mat, idm.mat, row);
+                MatrixUtil::gauss_jordan_elimination(m.mat, idm.mat, row);
                 return idm;
             }
 

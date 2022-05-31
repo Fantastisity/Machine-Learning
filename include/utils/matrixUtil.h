@@ -6,6 +6,7 @@
 #include <unordered_map>
 #define ROW 1
 #define COL 0
+#define MAX(a, b) (a > b ? a : b)
 
 namespace MACHINE_LEARNING {
     using ll = long long;
@@ -52,41 +53,49 @@ namespace MACHINE_LEARNING {
         };
 
         template<typename T>
-        static void gaussian_elimination(T* a, T* b, const size_t n) {
-            for (size_t i = 0; i < n - 1; ++i) {
-                if (!partial_pivoting(a, b, i, n)) continue;
-                for (size_t j = i + 1; j < n; ++j) {
-                    if (!a[j * n + i]) continue;
-                    double frac = 1.0 * a[i * n + i] / a[j * n + i];
-                    for (size_t k = 0; k < n; ++k)
-                        a[j * n + k] = a[j * n + k] * frac - a[i * n + k],
-                        b[j * n + k] = b[j * n + k] * frac - b[i * n + k];
+        static void gauss_elimination(T* a, T* b, const size_t m, const size_t na, const size_t nb) {
+            for (size_t i = 0; i < na - 1; ++i) {
+                if (!partial_pivoting(a, b, i, m, na, nb)) continue;
+                for (size_t j = i + 1; j < m; ++j) {
+                    if (!a[j * na + i]) continue;
+                    double frac = 1.0 * a[i * na + i] / a[j * na + i];
+                    for (size_t k = 0, n = MAX(na, nb); k < n; ++k) {
+                        if (k < na) a[j * n + k] = a[j * n + k] * frac - a[i * n + k];
+                        if (k < nb) b[j * n + k] = b[j * n + k] * frac - b[i * n + k];
+                    }
                 }
             }
         }
 
         template<typename T>
-        static void gaussian_jordan_elimination(T* a, T* b, const size_t n) {
+        static void gauss_jordan_elimination(T* a, T* b, const size_t m, const size_t na, const size_t nb) {
             double tmp;
-            for (size_t i = 0; i < n; ++i) {
-                if (!a[i * n + i] && !partial_pivoting(a, b, i, n)) continue;
-                if (a[i * n + i] != 1) {
-                    tmp = 1.0 / a[i * n + i];
-                    for (size_t j = 0; j < n; ++j) a[i * n + j] *= tmp, b[i * n + j] *= tmp;
+            for (size_t i = 0, r = 0; i < na && r < m; ++i, ++r) {
+                while (!a[r * na + i] && !partial_pivoting(a, b, i, m, na, nb)) {
+                    ++i;
+                    if (i == na) return;
                 }
-                for (size_t j = i + 1; j < n; ++j) {
-                    if (!a[j * n + i]) continue;
-                    tmp = a[j * n + i];
-                    for (size_t k = 0; k < n; ++k) 
-                        a[j * n + k] -= a[i * n + k] * tmp,
-                        b[j * n + k] -= b[i * n + k] * tmp;
+                if (a[r * na + i] != 1) {
+                    tmp = 1.0 / a[r * na + i];
+                    for (size_t j = 0, n = MAX(na, nb); j < n; ++j) {
+                        if (j < na) a[r * na + j] *= tmp; 
+                        if (j < nb) b[r * nb + j] *= tmp;
+                    }
+                }
+                for (size_t j = r + 1; j < m; ++j) {
+                    if (!a[j * na + i]) continue;
+                    tmp = a[j * na + i];
+                    for (size_t k = 0, n = MAX(na, nb); k < n; ++k) {
+                        if (k < na) a[j * na + k] -= a[r * na + k] * tmp;
+                        if (k < nb) b[j * nb + k] -= b[r * nb + k] * tmp;
+                    }
                 }
             }
 
-            for (size_t i = n - 1; i; --i) {
-                if (a[i * n + i] != 1) continue;
+            for (size_t i = na - 1; i; --i) {
+                if (a[i * na + i] != 1) continue;
                 for (size_t j = 0; j < i; ++j) {
-                    tmp = a[j * n + i];
+                    tmp = a[j * na + i];
                     for (size_t k = 0; k < n; ++k) 
                         a[j * n + k] -= a[i * n + k] * tmp,
                         b[j * n + k] -= b[i * n + k] * tmp;
@@ -246,14 +255,17 @@ namespace MACHINE_LEARNING {
 
         private:
             template<typename T>
-            static bool partial_pivoting(T* a, T* b, const size_t i, const size_t n) {
-                T tmp = a[i * n + i];
+            static bool partial_pivoting(T* a, T* b, const size_t i, const size_t m, const size_t na, const size_t nb) {
+                T tmp = a[i * na + i];
                 size_t swap_ind = -1;
-                for (size_t j = i + 1; j < n; ++j) 
-                    if (j == i + 1 || tmp < std::abs(a[j * n + i]))
-                        tmp = a[j * n + i], swap_ind = j;
+                for (size_t j = i + 1; j < m; ++j) 
+                    if (tmp < std::abs(a[j * na + i]))
+                        tmp = a[j * na + i], swap_ind = j;
                 if (!tmp) return 0;
-                for (size_t j = 0; j < n; ++j) std::swap(a[i * n + j], a[swap_ind * n + j]), std::swap(b[i * n + j], b[swap_ind * n + j]);
+                for (size_t j = 0, n = MAX(na, nb); j < n; ++j) {
+                    if (j < na) std::swap(a[i * n + j], a[swap_ind * n + j]);
+                    if (j < nb) std::swap(b[i * n + j], b[swap_ind * n + j]);
+                }
                 return 1;
             }
     };
