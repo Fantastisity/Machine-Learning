@@ -26,14 +26,18 @@ namespace MACHINE_LEARNING {
                 else this->x = x;
 
                 this->x.addCol(std::vector<double>(x.rowNum(), 1.0).data());
-                this->w = Matrix<double>(std::vector<std::vector<double>>(this->x.colNum(), std::vector<double>(1, 0.0)));
 
                 if constexpr (ModelUtil::isDataframe<typename std::remove_reference<R>::type>::val) 
                     this->y = y.values().template asType<double>();
                 else this->y = y;
 
                 if (verbose == 2) print_params(), puts("");
-                gradient_descent();
+                
+                if (this->t == GDType::None) this->w = ((this->x).trans() * this->x).inverse() * (this->x).trans() * this->y; // Closed-form solution
+                else {
+                    this->w = Matrix<double>(std::vector<std::vector<double>>(this->x.colNum(), std::vector<double>(1, 0.0)));
+                    gradient_descent();
+                }
                 if (verbose) print_weights();
             }
 

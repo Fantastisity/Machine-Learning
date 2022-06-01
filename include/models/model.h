@@ -4,8 +4,8 @@
 #include "../tabular-data/dataFrame.h"
 #endif
 
-enum Type { BATCH , STOCHASTIC, MINI_BATCH };
-enum Regularizor { None, L1, L2, ENet };
+enum class GDType { None, BATCH , STOCHASTIC, MINI_BATCH };
+enum class Regularizor { None, L1, L2, ENet };
 
 namespace MACHINE_LEARNING {
     class SupervisedModel {
@@ -15,8 +15,8 @@ namespace MACHINE_LEARNING {
             Matrix<double> x{0}, y{0};
             double eta = 1e-9, lamb, alpha, eps = 1e-2;
             ll iter = 1000, batch_size;
-            Regularizor r = None;
-            Type t = BATCH;
+            Regularizor r = Regularizor::None;
+            GDType t = GDType::None;
         public:
             void set_eta(const double eta) {
                 this->eta = eta;
@@ -59,12 +59,12 @@ namespace MACHINE_LEARNING {
                 else varying_params.emplace_back(std::make_pair(5, alpha));
             }
 
-            void set_gd_type(const Type t, const ll batch_size = 64) {
+            void set_gd_type(const GDType t, const ll batch_size = 64) {
                 this->t = t;
                 this->batch_size = batch_size;
             }
             void set_gd_type(const std::initializer_list<double>&& t, const std::initializer_list<double>&& batch_size = {64}) {
-                if (t.size() == 1) this->t = static_cast<Type>((size_t) *t.begin());
+                if (t.size() == 1) this->t = static_cast<GDType>((size_t) *t.begin());
                 else varying_params.emplace_back(std::make_pair(6, t));
                 if (batch_size.size() == 1) this->batch_size = *batch_size.begin();
                 else varying_params.emplace_back(std::make_pair(7, batch_size));
@@ -92,7 +92,7 @@ namespace MACHINE_LEARNING {
                             this->alpha = i.second;
                             break;
                         case 6:
-                            this->t = static_cast<Type>((size_t) i.second);
+                            this->t = static_cast<GDType>((size_t) i.second);
                             break;
                         case 7:
                             this->batch_size = i.second;

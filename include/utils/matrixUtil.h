@@ -53,33 +53,41 @@ namespace MACHINE_LEARNING {
         };
 
         template<typename T>
-        static void gauss_elimination(T* a, T* b, const size_t m, const size_t na, const size_t nb) {
-            for (size_t i = 0; i < na - 1; ++i) {
-                if (!partial_pivoting(a, b, i, m, na, nb)) continue;
-                for (size_t j = i + 1; j < m; ++j) {
+        static bool gauss_elimination(T* a, T* b, const size_t m, const size_t na, const size_t nb, bool check_invertible = 0) {
+            assert(a != nullptr);
+            for (size_t i = 0, r = 0; i < na - 1 && r < m; ++i, ++r) {
+                while (!partial_pivoting(a, b, i, m, na, nb)) {
+                    if (check_invertible) return 0;
+                    ++i;
+                    if (i == na - 1) return 1;
+                }
+                for (size_t j = r + 1; j < m; ++j) {
                     if (!a[j * na + i]) continue;
-                    double frac = 1.0 * a[i * na + i] / a[j * na + i];
+                    double frac = 1.0 * a[r * na + i] / a[j * na + i];
                     for (size_t k = 0, n = MAX(na, nb); k < n; ++k) {
                         if (k < na) a[j * n + k] = a[j * n + k] * frac - a[i * n + k];
                         if (k < nb) b[j * n + k] = b[j * n + k] * frac - b[i * n + k];
                     }
                 }
             }
+            return 1;
         }
 
         template<typename T>
-        static void gauss_jordan_elimination(T* a, T* b, const size_t m, const size_t na, const size_t nb) {
+        static bool gauss_jordan_elimination(T* a, T* b, const size_t m, const size_t na, const size_t nb, bool check_invertible = 0) {
+            assert(a != nullptr);
             double tmp;
             for (size_t i = 0, r = 0; i < na && r < m; ++i, ++r) {
                 while (!a[r * na + i] && !partial_pivoting(a, b, i, m, na, nb)) {
+                    if (check_invertible) return 0;
                     ++i;
-                    if (i == na) return;
+                    if (i == na) return 1;
                 }
                 if (a[r * na + i] != 1) {
                     tmp = 1.0 / a[r * na + i];
                     for (size_t j = 0, n = MAX(na, nb); j < n; ++j) {
                         if (j < na) a[r * na + j] *= tmp; 
-                        if (j < nb) b[r * nb + j] *= tmp;
+                        if (b && j < nb) b[r * nb + j] *= tmp;
                     }
                 }
                 for (size_t j = r + 1; j < m; ++j) {
@@ -87,20 +95,23 @@ namespace MACHINE_LEARNING {
                     tmp = a[j * na + i];
                     for (size_t k = 0, n = MAX(na, nb); k < n; ++k) {
                         if (k < na) a[j * na + k] -= a[r * na + k] * tmp;
-                        if (k < nb) b[j * nb + k] -= b[r * nb + k] * tmp;
+                        if (b && k < nb) b[j * nb + k] -= b[r * nb + k] * tmp;
                     }
                 }
             }
 
-            for (size_t i = na - 1; i; --i) {
-                if (a[i * na + i] != 1) continue;
-                for (size_t j = 0; j < i; ++j) {
+            for (size_t i = na - 1, r = m - 1; r; --r, --i) {
+                while (!a[r * na + i]) --i;
+                for (size_t j = 0; j < r; ++j) {
                     tmp = a[j * na + i];
-                    for (size_t k = 0; k < n; ++k) 
-                        a[j * n + k] -= a[i * n + k] * tmp,
-                        b[j * n + k] -= b[i * n + k] * tmp;
+                    for (size_t k = 0, n = MAX(na, nb); k < n; ++k) {
+                        if (k < na) a[j * n + k] -= a[r * n + k] * tmp;
+                        if (k < nb) b[j * n + k] -= b[r * n + k] * tmp;
+                    }
                 }
             }
+
+            return 1;
         }
 
         template<typename X, typename Y, typename Z>
@@ -264,7 +275,7 @@ namespace MACHINE_LEARNING {
                 if (!tmp) return 0;
                 for (size_t j = 0, n = MAX(na, nb); j < n; ++j) {
                     if (j < na) std::swap(a[i * n + j], a[swap_ind * n + j]);
-                    if (j < nb) std::swap(b[i * n + j], b[swap_ind * n + j]);
+                    if (b && j < nb) std::swap(b[i * n + j], b[swap_ind * n + j]);
                 }
                 return 1;
             }

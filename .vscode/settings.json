@@ -70,7 +70,9 @@
         "__functional_base_03": "cpp",
         "filesystem": "cpp",
         "unordered_set": "cpp",
-        "future": "cpp"
+        "future": "cpp",
+        "__tree": "cpp",
+        "map": "cpp"
     },
     "workbench.colorCustomizations": {
         "activityBar.activeBackground": "#51585b",
