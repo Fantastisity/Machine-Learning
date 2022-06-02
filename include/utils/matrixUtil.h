@@ -66,7 +66,7 @@ namespace MACHINE_LEARNING {
                     double frac = 1.0 * a[r * na + i] / a[j * na + i];
                     for (size_t k = 0, n = MAX(na, nb); k < n; ++k) {
                         if (k < na) a[j * n + k] = a[j * n + k] * frac - a[i * n + k];
-                        if (k < nb) b[j * n + k] = b[j * n + k] * frac - b[i * n + k];
+                        if (b && k < nb) b[j * n + k] = b[j * n + k] * frac - b[i * n + k];
                     }
                 }
             }
@@ -106,7 +106,7 @@ namespace MACHINE_LEARNING {
                     tmp = a[j * na + i];
                     for (size_t k = 0, n = MAX(na, nb); k < n; ++k) {
                         if (k < na) a[j * n + k] -= a[r * n + k] * tmp;
-                        if (k < nb) b[j * n + k] -= b[r * n + k] * tmp;
+                        if (b && k < nb) b[j * n + k] -= b[r * n + k] * tmp;
                     }
                 }
             }
