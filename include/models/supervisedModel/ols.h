@@ -4,15 +4,9 @@
 #endif
 
 namespace MACHINE_LEARNING {
-    class LinearRegression : public SupervisedModel {
-            friend class ModelUtil;
-            Matrix<double> w{0};
-
-            auto loss();
-
-            auto gradient(Matrix<double>& X, Matrix<double>& Y);
-
-            void gradient_descent();
+    class LinearRegression : public SupervisedModel<LinearRegression> {
+            double loss();
+            Matrix<double> gradient(Matrix<double>& X, Matrix<double>& Y);
         public:
             LinearRegression();
             void print_params();
@@ -49,7 +43,7 @@ namespace MACHINE_LEARNING {
                 else tmp = xtest;
                 
                 tmp.addCol(std::vector<double>(tmp.rowNum(), 1.0).data());
-                return tmp * w;
+                return tmp * this->w;
             }
     };
 }

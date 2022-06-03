@@ -201,8 +201,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename M>
-            auto cross_validation(M&& estimator, DataFrame<elem>& X, DataFrame<elem>& Y, size_t k = 5) -> 
-            typename std::enable_if<isModel<typename std::remove_reference<M>::type, DataFrame<elem>>::val, double>::type {
+            double cross_validation(SupervisedModel<M>& estimator, DataFrame<elem>& X, DataFrame<elem>& Y, size_t k = 5) {
                 if (k > X.rowNum()) k = 1;
                 auto [indTrain, indTest, range, n] = k_fold(k, X.rowNum()); 
                 double score = 0;
@@ -220,9 +219,8 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename M>
-            auto grid_search(M&& estimator, DataFrame<elem>& X, DataFrame<elem>& Y) -> 
-            typename std::enable_if<isModel<typename std::remove_reference<M>::type, DataFrame<elem>>::val, 
-                     std::pair<std::vector<std::pair<size_t, double>>, double>>::type {
+            std::pair<std::vector<std::pair<size_t, double>>, double> 
+            grid_search(SupervisedModel<M>& estimator, DataFrame<elem>& X, DataFrame<elem>& Y) {
                 std::vector<std::pair<size_t, double>> tmp;
                 std::vector<std::vector<std::pair<size_t, double>>> param_comb;
                 auto gen_comb = [&](size_t pos, auto&& gen_comb) {
@@ -242,7 +240,7 @@ namespace MACHINE_LEARNING {
                 size_t best_ind = -1;
                 for (size_t i = 0, n = param_comb.size(); i < n; ++i) {
                     estimator.set_params(param_comb[i]);
-                    double err = cross_validation(std::forward<M>(estimator), X, Y);
+                    double err = cross_validation(estimator, X, Y);
                     if (best_err == -1 || best_err > err) best_err = err, best_ind = i;
                 }
                 return std::make_pair(param_comb[best_ind], best_err);

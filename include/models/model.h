@@ -8,16 +8,98 @@ enum class GDType { None, BATCH , STOCHASTIC, MINI_BATCH };
 enum class Regularizor { None, L1, L2, ENet };
 
 namespace MACHINE_LEARNING {
+    template<typename M>
     class SupervisedModel {
+        friend class ModelUtil;
         protected:
             std::ofstream output;
             std::vector<std::pair<size_t, std::vector<double>>> varying_params;
-            Matrix<double> x{0}, y{0};
+            Matrix<double> x{0}, y{0}, w{0};
             double eta = 1e-9, lamb, alpha, eps = 1e-2;
             ll iter = 1000, batch_size;
             Regularizor r = Regularizor::None;
             GDType t = GDType::None;
+
+            void gradient_descent() {
+                switch (t) {
+                    case GDType::BATCH: {
+                        for (size_t i = 0; i < iter; ++i) {
+                            if (loss() <= eps) break;
+                            #ifdef WRITE_TO_FILE
+                                output << i << '\t' << std::fixed << l;
+                            #endif
+                            w -= gradient(x, y) * eta;
+                        }
+                        #ifdef WRITE_TO_FILE
+                            output.close();
+                        #endif
+                        return;
+                    }
+                    case GDType::STOCHASTIC: {
+                        size_t n = x.rowNum(), ind[n];
+                        for (size_t i = 0; i < n; ++i) ind[i] = i;
+                        #ifdef WRITE_TO_FILE
+                            ll cnt = 0;
+                        #endif
+                        for (size_t i = 0, term = 0; i < iter && !term; ++i) {
+                            std::shuffle(ind, ind + n, std::default_random_engine {});
+                            for (auto& j : ind) {
+                                if (loss() <= eps) {
+                                    term = 1;
+                                    break;
+                                }
+                                #ifdef WRITE_TO_FILE
+                                    output << cnt++ << '\t' << std::fixed << l;
+                                #endif
+                                auto x_t = x(rngSlicer(j, j + 1), rngSlicer(0, x.colNum())),
+                                    y_t = y(rngSlicer(j, j + 1), rngSlicer(0, y.colNum()));
+                                w -= gradient(x_t, y_t) * eta;
+                            }
+                        }
+                        #ifdef WRITE_TO_FILE
+                            output.close();
+                        #endif
+                        return;
+                    }
+                    case GDType::MINI_BATCH: {
+                        size_t n = x.rowNum(), ind[n];
+                        while (n / batch_size < 2) batch_size >>= 1;
+                        if (!batch_size) {
+                            logger("switching to BGD due to insufficient data");
+                            t = GDType::BATCH, gradient_descent();
+                        }
+                        for (size_t i = 0; i < n; ++i) ind[i] = i;
+                        #ifdef WRITE_TO_FILE
+                            ll cnt = 0;
+                        #endif
+                        for (size_t i = 0, term = 0; i < iter && !term; ++i) {
+                            std::shuffle(ind, ind + n, std::default_random_engine {});
+                            for (size_t j = 0, num; j < n; j += num) {
+                                if (loss() <= eps) {
+                                    term = 1;
+                                    break;
+                                }
+                                #ifdef WRITE_TO_FILE
+                                    output << cnt++ << '\t' << std::fixed << l;
+                                #endif
+                                num = std::min(static_cast<size_t>(batch_size), n - j);
+                                auto x_t = x(ptrSlicer(ind + j, num), rngSlicer(x.colNum())), 
+                                        y_t = y(ptrSlicer(ind + j,num), rngSlicer(y.colNum()));
+                                w -= gradient(x_t, y_t) * eta;
+                            }
+                        }
+                        #ifdef WRITE_TO_FILE
+                            output.close();
+                        #endif
+                        return;
+                    }
+                }
+            }
+
+            virtual double loss(){}
+            virtual Matrix<double> gradient(Matrix<double>& X, Matrix<double>& Y){}
         public:
+            virtual ~SupervisedModel(){}
             void set_eta(const double eta) {
                 this->eta = eta;
             }
@@ -98,6 +180,15 @@ namespace MACHINE_LEARNING {
                             this->batch_size = i.second;
                     } 
                 }
+            }
+            template<typename T, typename R>
+            void fit(T&& x, R&& y, const uint8_t verbose = 0) {
+                (static_cast<M*>(this))->fit(std::forward<T>(x), std::forward<R>(y), verbose);
+            }
+
+            template<typename T>
+            Matrix<double> predict(T&& xtest) {
+                return (static_cast<M*>(this))->predict(std::forward<T>(xtest));
             }
     };
 }
