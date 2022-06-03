@@ -219,10 +219,10 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename M>
-            std::pair<std::vector<std::pair<size_t, double>>, double> 
+            std::pair<std::vector<std::pair<Param, double>>, double> 
             grid_search(SupervisedModel<M>& estimator, DataFrame<elem>& X, DataFrame<elem>& Y) {
-                std::vector<std::pair<size_t, double>> tmp;
-                std::vector<std::vector<std::pair<size_t, double>>> param_comb;
+                std::vector<std::pair<Param, double>> tmp;
+                std::vector<std::vector<std::pair<Param, double>>> param_comb;
                 auto gen_comb = [&](size_t pos, auto&& gen_comb) {
                     if (tmp.size() == estimator.varying_params.size()) {
                         param_comb.push_back(tmp);
