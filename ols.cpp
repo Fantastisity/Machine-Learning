@@ -30,7 +30,7 @@ namespace MACHINE_LEARNING {
     }
 
     Matrix<double> LinearRegression::gradient(Matrix<double>& X, Matrix<double>& Y) {
-        auto grad = X.trans() * (X * this->w - Y);
+        Matrix<double> grad = X.trans() * (X * this->w - Y);
         switch (r) {
             case Regularizor::None:
                 break;

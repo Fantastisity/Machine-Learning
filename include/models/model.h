@@ -14,7 +14,7 @@ namespace MACHINE_LEARNING {
         friend class ModelUtil;
         protected:
             std::ofstream output;
-            std::vector<std::pair<Param, std::vector<double>>> varying_params;
+            std::vector<std::pair<Param, std::vector<double>>> param_list;
             Matrix<double> x{0}, y{0}, w{0};
             double eta = 1e-9, lamb, alpha, eps = 1e-2;
             ll iter = 1000, batch_size;
@@ -106,7 +106,7 @@ namespace MACHINE_LEARNING {
             }
             void set_eta(const std::initializer_list<double>&& eta) {
                 if (eta.size() == 1) this->eta = *eta.begin();
-                else varying_params.emplace_back(std::make_pair(Param::ETA, eta));
+                else param_list.emplace_back(std::make_pair(Param::ETA, eta));
             }
 
             void set_epsilon(const double eps) {
@@ -114,7 +114,7 @@ namespace MACHINE_LEARNING {
             }
             void set_epsilon(const std::initializer_list<double>&& eps) {
                 if (eps.size() == 1) this->eps = *eps.begin();
-                else varying_params.emplace_back(std::make_pair(Param::EPSILON, eps));
+                else param_list.emplace_back(std::make_pair(Param::EPSILON, eps));
             }
 
             void set_iteration(const ll iter) {
@@ -122,7 +122,7 @@ namespace MACHINE_LEARNING {
             }
             void set_iteration(const std::initializer_list<double>&& iter) {
                 if (iter.size() == 1) this->iter = *iter.begin();
-                else varying_params.emplace_back(std::make_pair(Param::ITERATION, iter));
+                else param_list.emplace_back(std::make_pair(Param::ITERATION, iter));
             }
 
             void set_regularizor(const Regularizor r, const double lamb = 1, const double alpha = 0.5) {
@@ -135,11 +135,11 @@ namespace MACHINE_LEARNING {
                 const std::initializer_list<double>&& lamb = {1.0}, 
                 const std::initializer_list<double>&& alpha = {0.5}) {
                 if (r.size() == 1) this->r = static_cast<Regularizor>((size_t) *r.begin());
-                else varying_params.emplace_back(std::make_pair(Param::REGULARIZOR, r));
+                else param_list.emplace_back(std::make_pair(Param::REGULARIZOR, r));
                 if (lamb.size() == 1) this->lamb = *lamb.begin();
-                else varying_params.emplace_back(std::make_pair(Param::LAMBDA, lamb));
+                else param_list.emplace_back(std::make_pair(Param::LAMBDA, lamb));
                 if (alpha.size() == 1) this->alpha = *alpha.begin();
-                else varying_params.emplace_back(std::make_pair(Param::ALPHA, alpha));
+                else param_list.emplace_back(std::make_pair(Param::ALPHA, alpha));
             }
 
             void set_gd_type(const GDType t, const ll batch_size = 64) {
@@ -148,9 +148,9 @@ namespace MACHINE_LEARNING {
             }
             void set_gd_type(const std::initializer_list<double>&& t, const std::initializer_list<double>&& batch_size = {64}) {
                 if (t.size() == 1) this->t = static_cast<GDType>((size_t) *t.begin());
-                else varying_params.emplace_back(std::make_pair(Param::GD_TYPE, t));
+                else param_list.emplace_back(std::make_pair(Param::GD_TYPE, t));
                 if (batch_size.size() == 1) this->batch_size = *batch_size.begin();
-                else varying_params.emplace_back(std::make_pair(Param::BATCH_SIZE, batch_size));
+                else param_list.emplace_back(std::make_pair(Param::BATCH_SIZE, batch_size));
             }
 
             void set_params(std::vector<std::pair<Param, double>>& grid) {

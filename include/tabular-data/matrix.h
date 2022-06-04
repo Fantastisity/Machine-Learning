@@ -354,6 +354,11 @@ namespace MACHINE_LEARNING {
                 return apply([&](const size_t i, const size_t j){mat[i * col + j] += val;});
             }
 
+            Matrix& operator-() {
+                for (size_t i = 0; i < row * col; ++i) mat[i] = -mat[i];
+                return *this;
+            }
+
             template<typename R>
             Matrix operator- (R&& rht) const {
                 Matrix m = *this;

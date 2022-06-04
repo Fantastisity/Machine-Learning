@@ -140,9 +140,26 @@ namespace MACHINE_LEARNING {
                 Matrix<T> mat(r, c);
                 for (size_t i = 0; i < r; ++i)
                     for (size_t j = 0; j < c; ++j)
-                        mat.insert(i, j, m(i, j) < 0 ? -m(i, j) : m(i, j));
+                        mat(i, j) = m(i, j) < 0 ? -m(i, j) : m(i, j);
                 return mat;
             }
+
+            template<typename T>
+            auto sigmoid(T&& z) 
+            -> typename std::enable_if<isNumerical<typename std::remove_reference<T>::type>::val, typename std::remove_reference<T>::type>::type {
+                return 1.0 / (1 + exp(-z));
+            }
+
+            template<typename T>
+            auto naturalLog(const Matrix<T>& m) 
+            -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
+                size_t r = m.rowNum(), c = m.colNum();
+                Matrix<T> mat(r, c);
+                for (size_t i = 0; i < r; ++i)
+                    for (size_t j = 0; j < c; ++j) 
+                        mat(i, j) = log(m(i, j));
+                return mat;
+            }            
 
             template<typename T>
             auto sign(const Matrix<T>& m) 
@@ -151,7 +168,7 @@ namespace MACHINE_LEARNING {
                 Matrix<T> mat(r, c);
                 for (size_t i = 0; i < r; ++i)
                     for (size_t j = 0; j < c; ++j)
-                        mat.insert(i, j, m(i, j) < 0 ? -1 : (!mat(i, j) ? 0 : 1));
+                        mat(i, j) = m(i, j) < 0 ? -1 : (!mat(i, j) ? 0 : 1);
                 return mat;
             }
 
@@ -224,12 +241,12 @@ namespace MACHINE_LEARNING {
                 std::vector<std::pair<Param, double>> tmp;
                 std::vector<std::vector<std::pair<Param, double>>> param_comb;
                 auto gen_comb = [&](size_t pos, auto&& gen_comb) {
-                    if (tmp.size() == estimator.varying_params.size()) {
+                    if (tmp.size() == estimator.param_list.size()) {
                         param_comb.push_back(tmp);
                         return;
                     }
-                    for (auto& i : estimator.varying_params[pos].second) {
-                        tmp.push_back(std::make_pair(estimator.varying_params[pos].first, i));
+                    for (auto& i : estimator.param_list[pos].second) {
+                        tmp.push_back(std::make_pair(estimator.param_list[pos].first, i));
                         gen_comb(pos + 1, gen_comb);
                         tmp.pop_back();
                     }
