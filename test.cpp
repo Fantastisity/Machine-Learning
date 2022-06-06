@@ -16,7 +16,7 @@ int main() {
     MACHINE_LEARNING::Parser, 
     MACHINE_LEARNING::LinearRegression, 
     MACHINE_LEARNING::LogisticRegression, 
-    MACHINE_LEARNING::modUtil,
+    MACHINE_LEARNING::ModelUtil,
     MACHINE_LEARNING::DataFrame,
     MACHINE_LEARNING::elem;
 
@@ -24,13 +24,13 @@ int main() {
     auto X = p.getX(0, 4);
     auto Y = p.getY(4);
 
-    MACHINE_LEARNING::ModelUtil::LabelEncoder<elem> encoder(1);
+    ModelUtil::LabelEncoder<elem> encoder(1);
     encoder.fit_transform(Y, 0);
-    auto [xtrain, xtest, ytrain, ytest] = modUtil.train_test_split(X, Y, 0.25, 1);
+    auto [xtrain, xtest, ytrain, ytest] = ModelUtil::train_test_split(X, Y, 0.25, 1);
     LogisticRegression clf;
     clf.set_gd_type(GDType::STOCHASTIC);
     clf.fit(xtrain, ytrain, 2);
-    logger(modUtil.ACCURACY(clf.predict(xtest), ytest.values()));
+    logger(ModelUtil::ACCURACY(clf.predict(xtest), ytest.values()));
     // LinearRegression lr;
 
     // // lr.set_gd_type(GDType::BATCH);
@@ -43,11 +43,11 @@ int main() {
     //                     static_cast<double>(Regularizor::L2), 
     //                     static_cast<double>(Regularizor::ENet)}, {0.1, 0.2});
 
-    // auto [best_param, best_err] = modUtil.grid_search(lr, xtrain, ytrain);
+    // auto [best_param, best_err] = ModelUtil::grid_search(lr, xtrain, ytrain);
     // lr.set_params(best_param);
     // lr.fit(xtrain, ytrain, 2);
-    // logger("BGD RMSE:", modUtil.RMSE(lr.predict(xtest), ytest.values()));
-    // logger("BGD CV:  ", modUtil.cross_validation(lr, xtrain, ytrain));
+    // logger("BGD RMSE:", ModelUtil::RMSE(lr.predict(xtest), ytest.values()));
+    // logger("BGD CV:  ", ModelUtil::cross_validation(lr, xtrain, ytrain));
 
     return 0;
 }

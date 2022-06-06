@@ -37,7 +37,7 @@ namespace MACHINE_LEARNING {
                 else tmp = xtest;
                 
                 tmp.addCol(std::vector<double>(tmp.rowNum(), 1.0).data());
-                tmp = modUtil.sigmoid(tmp * this->w);
+                tmp = ModelUtil::sigmoid(tmp * this->w);
                 for (size_t i = 0, n = tmp.rowNum(); i < n; ++i) tmp(i, 0) = tmp(i, 0) < 0.5 ? 0 : 1;
                 return tmp;
             }

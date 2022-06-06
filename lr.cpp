@@ -11,38 +11,38 @@ namespace MACHINE_LEARNING {
     }
 
     double LogisticRegression::loss() {
-        Matrix<double> l = -(this->y.trans() * modUtil.naturalLog(modUtil.sigmoid(this->x * this->w)) - 
-                            (1 - this->y).trans() * modUtil.naturalLog(1 - modUtil.sigmoid(this->x * this->w)));
+        Matrix<double> l = -(this->y.trans() * ModelUtil::naturalLog(ModelUtil::sigmoid(this->x * this->w)) - 
+                            (1 - this->y).trans() * ModelUtil::naturalLog(1 - ModelUtil::sigmoid(this->x * this->w)));
         switch (r) {
             case Regularizor::None:
                 break;
             case Regularizor::L1:
-                l += modUtil.sum(modUtil.abs(this->w)) * this->lamb;
+                l += ModelUtil::sum(ModelUtil::abs(this->w)) * this->lamb;
                 break;
             case Regularizor::L2:
                 l += this->w.trans() * this->w * this->lamb * 0.5;
                 break;
             case Regularizor::ENet:
                 l += this->w.trans() * this->w * this->lamb * 0.5 * (1 - this->alpha) + 
-                     modUtil.sum(modUtil.abs(this->w)) * this->lamb * this->alpha;
+                     ModelUtil::sum(ModelUtil::abs(this->w)) * this->lamb * this->alpha;
                 break;
         }
         return l(0, 0);
     }
 
     Matrix<double> LogisticRegression::gradient(Matrix<double>& X, Matrix<double>& Y) {
-        Matrix<double> grad = X.trans() * (modUtil.sigmoid(X * this->w) - Y);
+        Matrix<double> grad = X.trans() * (ModelUtil::sigmoid(X * this->w) - Y);
         switch (r) {
             case Regularizor::None:
                 break;
             case Regularizor::L1:
-                grad += modUtil.sign(this->w) * this->lamb;
+                grad += ModelUtil::sign(this->w) * this->lamb;
                 break;
             case Regularizor::L2:
                 grad += (this->w.trans() * this->w * this->lamb)(0, 0);
                 break;
             case Regularizor::ENet:
-                grad += modUtil.sign(this->w) * this->lamb * this->alpha + (this->w.trans() * this->w * this->lamb)(0, 0) * (1 - this->alpha);
+                grad += ModelUtil::sign(this->w) * this->lamb * this->alpha + (this->w.trans() * this->w * this->lamb)(0, 0) * (1 - this->alpha);
                 break;
         }
         return grad;
