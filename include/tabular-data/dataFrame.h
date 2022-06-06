@@ -51,6 +51,17 @@ namespace MACHINE_LEARNING {
                     }
                 }
             }
+
+            DataFrame(size_t row, size_t col, const std::vector<std::string>&& colnames = {}) : dt(row, col) {
+                if (!colnames.empty()) {
+                    size_t ncol = colnames.size();
+                    init_ind2name(ncol, 0);
+                    for (size_t i = 0; i < ncol; ++i) {
+                        char* tmp = strdup(colnames[i].c_str());
+                        name2ind[ind2name[i] = tmp] = i;
+                    }
+                }
+            }
             DataFrame(T** Mat, const size_t nrow, const size_t ncol, const std::vector<std::string>&& colnames = {}) : dt(Mat, nrow, ncol) {
                 if (!colnames.empty()) {
                     init_ind2name(ncol, 0);
@@ -124,7 +135,7 @@ namespace MACHINE_LEARNING {
                 }
             }
 
-            auto operator()(const size_t r, const size_t c) const {
+            auto& operator()(const size_t r, const size_t c) const {
                 return dt(r, c);
             }
 
@@ -210,6 +221,10 @@ namespace MACHINE_LEARNING {
                 dt.dropCol(feat_set, n);
             }
 
+            void rbind(DataFrame& df, bool reset_colname = 0, std::vector<std::string> new_colname = {}) {
+                rbind(std::move(df), reset_colname, new_colname);
+            }
+
             void rbind(DataFrame&& df, bool reset_colname = 0, std::vector<std::string> new_colname = {}) {
                 size_t n = colNum();
                 assert(n == df.colNum());
@@ -223,12 +238,18 @@ namespace MACHINE_LEARNING {
                 dt.concat(df.dt, ROW);
             }
 
+            void cbind(DataFrame& df) {
+                cbind(std::move(df));
+            }
+
             void cbind(DataFrame&& df) {
                 assert(rowNum() == df.rowNum());
                 size_t i = colNum(), n = i + df.colNum();
                 resize_ind2name(n);
-                for (size_t cnt = 0; i < n; ++cnt, ++i) name2ind[ind2name[i] = df.ind2name[cnt]] = i;
-                df.ind2name = nullptr;
+                if (df.ind2name) {
+                    for (size_t cnt = 0; i < n; ++cnt, ++i) name2ind[ind2name[i] = df.ind2name[cnt]] = i;
+                    df.ind2name = nullptr;
+                }
                 dt.concat(df.dt, COL);
             }
 
@@ -263,7 +284,7 @@ namespace MACHINE_LEARNING {
     template<typename R>
     inline std::ostream& operator<< (std::ostream& os, const DataFrame<R>& Df) {
         if (Df.ind2name) {
-            for (size_t i = 0, ncol = Df.colNum(); i < ncol; ++i) os << Df.ind2name[i] << " ";
+            for (size_t i = 0, ncol = Df.colNum(); i < ncol; ++i) if (Df.ind2name[i]) os << Df.ind2name[i] << " ";
             puts("");
         }
         os << Df.dt;

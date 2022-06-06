@@ -9,9 +9,6 @@ namespace MACHINE_LEARNING {
             Matrix<double> gradient(Matrix<double>& X, Matrix<double>& Y);
         public:
             LogisticRegression();
-            void print_params();
-
-            void print_weights();
 
             template<typename T, typename R>
             void fit(T&& x, R&& y, const uint8_t verbose = 0) {
@@ -27,11 +24,8 @@ namespace MACHINE_LEARNING {
 
                 if (verbose == 2) print_params(), puts("");
                 
-                if (this->t == GDType::None) this->w = ((this->x).trans() * this->x).inverse() * (this->x).trans() * this->y; // Closed-form solution
-                else {
-                    this->w = Matrix<double>(std::vector<std::vector<double>>(this->x.colNum(), std::vector<double>(1, 0.0)));
-                    gradient_descent();
-                }
+                this->w = Matrix<double>(std::vector<std::vector<double>>(this->x.colNum(), std::vector<double>(1, 0.0)));
+                gradient_descent();
                 if (verbose) print_weights();
             }
 
@@ -43,7 +37,9 @@ namespace MACHINE_LEARNING {
                 else tmp = xtest;
                 
                 tmp.addCol(std::vector<double>(tmp.rowNum(), 1.0).data());
-                return tmp * this->w;
+                tmp = modUtil.sigmoid(tmp * this->w);
+                for (size_t i = 0, n = tmp.rowNum(); i < n; ++i) tmp(i, 0) = tmp(i, 0) < 0.5 ? 0 : 1;
+                return tmp;
             }
     };
 }

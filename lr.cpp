@@ -1,5 +1,5 @@
-#ifndef LINEAR_MODEL_INCLUDED
-#define LINEAR_MODEL_INCLUDED
+#ifndef LR_INCLUDED
+#define LR_INCLUDED
 #include "include/models/supervisedModel/lr.h"
 #endif
 
@@ -11,8 +11,8 @@ namespace MACHINE_LEARNING {
     }
 
     double LogisticRegression::loss() {
-        Matrix<double> l = -(this->y.trans() * MatrixUtil::naturalLog(MatrixUtil::sigmoid(X * this->w)) - 
-                            (1 - this->y).trans() * MatrixUtil::naturalLog(1 - MatrixUtil::sigmoid(X * this->w)));
+        Matrix<double> l = -(this->y.trans() * modUtil.naturalLog(modUtil.sigmoid(this->x * this->w)) - 
+                            (1 - this->y).trans() * modUtil.naturalLog(1 - modUtil.sigmoid(this->x * this->w)));
         switch (r) {
             case Regularizor::None:
                 break;
@@ -31,7 +31,7 @@ namespace MACHINE_LEARNING {
     }
 
     Matrix<double> LogisticRegression::gradient(Matrix<double>& X, Matrix<double>& Y) {
-        Matrix<double> grad = X.trans() * (MatrixUtil::sigmoid(X * this->w) - Y);
+        Matrix<double> grad = X.trans() * (modUtil.sigmoid(X * this->w) - Y);
         switch (r) {
             case Regularizor::None:
                 break;

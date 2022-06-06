@@ -14,7 +14,7 @@ namespace MACHINE_LEARNING {
         public:
             Parser(std::string&& filename, char delim = ',', bool ignore_header = 0);
 
-            auto getX(size_t startCol, size_t range) {
+            auto getX(size_t startCol, size_t range = 1) {
                 return df.iloc(rngSlicer(rows), rngSlicer(startCol, startCol + range), 1);
             }
 

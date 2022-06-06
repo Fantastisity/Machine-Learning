@@ -1,5 +1,5 @@
-#ifndef LINEAR_MODEL_INCLUDED
-#define LINEAR_MODEL_INCLUDED
+#ifndef OLS_INCLUDED
+#define OLS_INCLUDED
 #include "include/models/supervisedModel/ols.h"
 #endif
 
@@ -45,51 +45,5 @@ namespace MACHINE_LEARNING {
                 break;
         }
         return grad;
-    }
-
-    void LinearRegression::print_params() {
-        pretty_print("", '*', 58, '*');
-        pretty_print("", ' ', 38, "Parameter Settings");
-        pretty_print("", '*', 58, '*');
-        switch (this->t) { 
-            case GDType::BATCH: 
-                pretty_print("gradient descent type:", ' ', 29, "BGD");
-                break;
-            case GDType::STOCHASTIC:
-                pretty_print("gradient descent type:", ' ', 29, "SGD");
-                break;
-            case GDType::MINI_BATCH:
-                pretty_print("gradient descent type:", ' ', 29, "MBGD"),
-                pretty_print("batch size:", ' ', 40, this->batch_size);
-                break;
-        }
-        if (this->r != Regularizor::None) {
-            switch (this->r) {
-                case Regularizor::L1:
-                    pretty_print("regularizor:", ' ', 39, "Lasso");
-                    break;
-                case Regularizor::L2:
-                    pretty_print("regularizor:", ' ', 39, "Ridge");
-                    break;
-                case Regularizor::ENet:
-                    pretty_print("regularizor:", ' ', 39, "Elastic Net"),
-                    pretty_print("alpha:", ' ', 45, this->alpha);
-                    break;
-            };
-            pretty_print("lambda:", ' ', 44, this->lamb);
-        }
-        
-        pretty_print("eta:", ' ', 47, this->eta);
-        pretty_print("epsilon:", ' ', 43, this->eps);
-        pretty_print("iterations:", ' ', 40, this->iter);
-        pretty_print("", '*', 58, '*');
-    }
-
-    void LinearRegression::print_weights() {
-        pretty_print("", '*', 58, '*');
-        pretty_print("", ' ', 35, "Final Weights");
-        pretty_print("", '*', 58, '*');
-        for (size_t i = 0, r = this->w.rowNum(); i < r; ++i) pretty_print(i, ' ', 50, this->w(i, 0));
-        pretty_print("", '*', 58, '*');
     }
 }

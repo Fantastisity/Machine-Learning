@@ -99,6 +99,51 @@ namespace MACHINE_LEARNING {
 
             virtual double loss(){}
             virtual Matrix<double> gradient(Matrix<double>& X, Matrix<double>& Y){}
+            void print_params() {
+                pretty_print("", '*', 58, '*');
+                pretty_print("", ' ', 38, "Parameter Settings");
+                pretty_print("", '*', 58, '*');
+                switch (t) { 
+                    case GDType::BATCH: 
+                        pretty_print("gradient descent type:", ' ', 29, "BGD");
+                        break;
+                    case GDType::STOCHASTIC:
+                        pretty_print("gradient descent type:", ' ', 29, "SGD");
+                        break;
+                    case GDType::MINI_BATCH:
+                        pretty_print("gradient descent type:", ' ', 29, "MBGD"),
+                        pretty_print("batch size:", ' ', 40, batch_size);
+                        break;
+                }
+                if (r != Regularizor::None) {
+                    switch (r) {
+                        case Regularizor::L1:
+                            pretty_print("regularizor:", ' ', 39, "Lasso");
+                            break;
+                        case Regularizor::L2:
+                            pretty_print("regularizor:", ' ', 39, "Ridge");
+                            break;
+                        case Regularizor::ENet:
+                            pretty_print("regularizor:", ' ', 39, "Elastic Net"),
+                            pretty_print("alpha:", ' ', 45, alpha);
+                            break;
+                    };
+                    pretty_print("lambda:", ' ', 44, lamb);
+                }
+                
+                pretty_print("eta:", ' ', 47, eta);
+                pretty_print("epsilon:", ' ', 43, eps);
+                pretty_print("iterations:", ' ', 40, iter);
+                pretty_print("", '*', 58, '*');
+            }
+
+            void print_weights() {
+                pretty_print("", '*', 58, '*');
+                pretty_print("", ' ', 35, "Final Weights");
+                pretty_print("", '*', 58, '*');
+                for (size_t i = 0, r = w.rowNum(); i < r; ++i) pretty_print(i, ' ', 50, w(i, 0));
+                pretty_print("", '*', 58, '*');
+            }
         public:
             virtual ~SupervisedModel(){}
             void set_eta(const double eta) {

@@ -148,7 +148,7 @@ namespace MACHINE_LEARNING {
             }
 
             void dim() const {
-                std::cout << row << " * " << col << '\n';
+                std::cout << row << ", " << col << '\n';
             }
 
             template<typename R>
@@ -421,7 +421,7 @@ namespace MACHINE_LEARNING {
 
     template<typename R>
     inline Matrix<R> operator+ (const Deduce<R> val, Matrix<R>& Mat) {
-        return val + std::move(Mat);
+        return Matrix(Mat) += val;
     }
 
     template<typename R>
@@ -431,17 +431,21 @@ namespace MACHINE_LEARNING {
 
     template<typename R>
     inline Matrix<R> operator- (const Deduce<R> val, Matrix<R>& Mat) {
-        return val - std::move(Mat);
+        Matrix<R> tmp(Mat);
+        tmp = -tmp;
+        return tmp += val;
     }
 
     template<typename R>
     inline Matrix<R> operator- (const Deduce<R> val, Matrix<R>&& Mat) {
-        return Matrix(std::move(Mat)) += -val;
+        Matrix<R> tmp(std::move(Mat));
+        tmp = -tmp;
+        return tmp += val;
     }
 
     template<typename R>
     inline Matrix<R> operator* (const Deduce<R> val, Matrix<R>& Mat) {
-        return val * std::move(Mat);
+        return Matrix(Mat) *= val;
     }
 
     template<typename R>
@@ -451,7 +455,7 @@ namespace MACHINE_LEARNING {
 
     template<typename R>
     inline Matrix<R> operator/ (const Deduce<R> val, Matrix<R>& Mat) {
-        return val / std::move(Mat);
+        return Matrix(Mat) /= val;
     }
 
     template<typename R>

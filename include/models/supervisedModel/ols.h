@@ -9,9 +9,6 @@ namespace MACHINE_LEARNING {
             Matrix<double> gradient(Matrix<double>& X, Matrix<double>& Y);
         public:
             LinearRegression();
-            void print_params();
-
-            void print_weights();
 
             template<typename T, typename R>
             void fit(T&& x, R&& y, const uint8_t verbose = 0) {

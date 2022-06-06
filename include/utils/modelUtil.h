@@ -28,12 +28,12 @@ namespace MACHINE_LEARNING {
             std::unordered_map<ll, T> reverse_mapping;
             ll cnt;
             bool inplace;
-            EncoderBase(const bool inplace) : inplace(inplace) { cnt = 1; }
+            EncoderBase(const bool inplace, ll cnt) : inplace(inplace), cnt(cnt) {}
             public:
-                void fit(const Matrix<T>& m, const size_t col) {
+                void fit(const DataFrame<T>& m, const size_t col) {
                     size_t n = m.rowNum();
                     for (size_t i = 0; i < n; ++i) 
-                        if (!mapping[m(i, col)]) reverse_mapping[mapping[m(i, col)] = cnt++] = m(i, col);
+                        if (!mapping.count(m(i, col))) reverse_mapping[mapping[m(i, col)] = cnt++] = m(i, col);
                     --cnt;
                 }
         };
@@ -51,22 +51,22 @@ namespace MACHINE_LEARNING {
             template<typename T>
             class LabelEncoder : public EncoderBase<T> {
                 public:
-                    LabelEncoder(const bool inplace = 0) : EncoderBase<T>(inplace) {}
-                    void transform(Matrix<T>& m, const size_t col) {
+                    LabelEncoder(const bool inplace = 0, const ll cnt = 0) : EncoderBase<T>(inplace, cnt) {}
+                    void transform(DataFrame<T>& m, const size_t col) {
                         size_t n = m.rowNum();
                         if (this->inplace) for (size_t i = 0; i < n; ++i) m(i, col) = this->mapping[m(i, col)];
                         else {
-                            Matrix<T> tmp(n, 1);
+                            DataFrame<T> tmp(n, 1);
                             for (size_t i = 0; i < n; ++i) tmp.insert(i, 0, this->mapping[m(i, col)]);
                             m.cbind(tmp);
                         }
                     }
 
-                    void fit_transform(Matrix<T>& m, const size_t col) {
+                    void fit_transform(DataFrame<T>& m, const size_t col) {
                         this->fit(m, col), transform(m, col);
                     }
 
-                    void inverse_transform(Matrix<T>& m, const size_t col) {
+                    void inverse_transform(DataFrame<T>& m, const size_t col) {
                         size_t n = m.rowNum();
                         for (size_t i = 0; i < n; ++i) m(i, col) = this->reverse_mapping[m(i, col)];
                     }
@@ -75,8 +75,8 @@ namespace MACHINE_LEARNING {
             template<typename T>
             class OnehotEncoder : public EncoderBase<T> {
                 public:
-                    OnehotEncoder(const bool inplace = 0) : EncoderBase<T>(inplace) {}
-                    void transform(Matrix<T>& m, const size_t col) {
+                    OnehotEncoder(const bool inplace = 0, const ll cnt = 1) : EncoderBase<T>(inplace, cnt) {}
+                    void transform(DataFrame<T>& m, const size_t col) {
                         size_t n = m.rowNum(), c = m.colNum();
                         if (this->cnt <= 32) 
                             for (size_t i = 0; i < n; ++i) {
@@ -101,7 +101,7 @@ namespace MACHINE_LEARNING {
                         this->fit(m, col), transform(m, col);
                     }
 
-                    void inverse_transform(Matrix<T>& m, const size_t col) {
+                    void inverse_transform(DataFrame<T>& m, const size_t col) {
                         size_t n = m.rowNum(), c = m.colNum();
                         if (this->cnt <= 32) this->cnt = 32;
                         else if (this->cnt <= 64) this->cnt = 64;
@@ -145,9 +145,13 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename T>
-            auto sigmoid(T&& z) 
-            -> typename std::enable_if<isNumerical<typename std::remove_reference<T>::type>::val, typename std::remove_reference<T>::type>::type {
-                return 1.0 / (1 + exp(-z));
+            auto sigmoid(const Matrix<T>& m) 
+            -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
+                size_t r = m.rowNum(), c = m.colNum();
+                Matrix<T> mat(r, c);
+                for (size_t i = 0; i < r; ++i)
+                    for (size_t j = 0; j < c; ++j) mat(i, j) = 1.0 / (1 + exp(-m(i, j)));
+                return mat;
             }
 
             template<typename T>
@@ -159,7 +163,7 @@ namespace MACHINE_LEARNING {
                     for (size_t j = 0; j < c; ++j) 
                         mat(i, j) = log(m(i, j));
                 return mat;
-            }            
+            }
 
             template<typename T>
             auto sign(const Matrix<T>& m) 
@@ -195,6 +199,13 @@ namespace MACHINE_LEARNING {
                 return std::sqrt((tmp.trans() * tmp / ypred.rowNum())(0, 0));
             }
 
+            template<typename T, typename R>
+            double ACCURACY(const Matrix<T>& ypred, const Matrix<R>& ytest) {
+                size_t r = ytest.rowNum(), cnt = 0;
+                for (size_t i = 0; i < r; ++i) if (static_cast<double>(ypred(i, 0)) == static_cast<double>(ytest(i, 0))) ++cnt;
+                return 1.0 * cnt / r;
+            }
+
             auto k_fold(const size_t k, const size_t sample_size) {
                 size_t n = static_cast<size_t>(std::ceil(sample_size / (k * 1.0))),
                        * indTrain = (size_t*) malloc(sizeof(size_t) * k * n * (k - 1)),
@@ -218,7 +229,8 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename M>
-            double cross_validation(SupervisedModel<M>& estimator, DataFrame<elem>& X, DataFrame<elem>& Y, size_t k = 5) {
+            double cross_validation(SupervisedModel<M>& estimator, DataFrame<elem>& X, DataFrame<elem>& Y, 
+                                    const char* scoring = "RMSE", size_t k = 5) {
                 if (k > X.rowNum()) k = 1;
                 auto [indTrain, indTest, range, n] = k_fold(k, X.rowNum()); 
                 double score = 0;
@@ -229,7 +241,8 @@ namespace MACHINE_LEARNING {
                          xtest  = x(ptrSlicer(indTest + i * n, range[(i << 1) + 1]),      rngSlicer(xcol)), 
                          ytest  = y(ptrSlicer(indTest + i * n, range[(i << 1) + 1]),      rngSlicer(ycol));
                     estimator.fit(xtrain, ytrain);
-                    score += RMSE(estimator.predict(xtest), ytest);
+                    if (!strcmp(scoring, "RMSE")) score += RMSE(estimator.predict(xtest), ytest);
+                    else if (!strcmp(scoring, "ACCURACY")) score += ACCURACY(estimator.predict(xtest), ytest);
                 }
                 free(indTrain), free(indTest), free(range);
                 return score / k;
