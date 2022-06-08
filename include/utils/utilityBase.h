@@ -30,6 +30,16 @@ static auto _ = []() {
 
 namespace MACHINE_LEARNING {
     struct UtilBase {
+        template <typename...> using Void = void;
+        template<typename U, typename R = void>
+        struct isDataframe {
+            const static bool val = 0;
+        };
+
+        template<typename U>
+        struct isDataframe<U, Void<decltype(&U::addFeature)>> {
+            const static bool val = 1;
+        };
         template<typename T>
         struct isNumerical {
             const static bool val = 1;

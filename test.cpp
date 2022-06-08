@@ -26,11 +26,13 @@ int main() {
 
     ModelUtil::LabelEncoder<elem> encoder(1);
     encoder.fit_transform(Y, 0);
-    auto [xtrain, xtest, ytrain, ytest] = ModelUtil::train_test_split(X, Y, 0.25, 1);
-    LogisticRegression clf;
-    clf.set_gd_type(GDType::STOCHASTIC);
-    clf.fit(xtrain, ytrain, 2);
-    logger(ModelUtil::ACCURACY(clf.predict(xtest), ytest.values()));
+    auto [xtrain, xtest, ytrain, ytest] = ModelUtil::train_test_split(X, Y, 0.25, 1, 1);
+    // LogisticRegression clf;
+    // clf.set_eta(1e-3);
+    // clf.set_gd_type(GDType::STOCHASTIC);
+    // clf.set_iteration(1000);
+    // clf.fit(xtrain, ytrain, 2);
+    // logger(ModelUtil::ACCURACY(clf.predict(xtest), ytest.values()));
     // LinearRegression lr;
 
     // // lr.set_gd_type(GDType::BATCH);

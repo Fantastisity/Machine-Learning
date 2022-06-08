@@ -36,9 +36,10 @@ namespace MACHINE_LEARNING {
                     tmp = xtest.values().template asType<double>();
                 else tmp = xtest;
                 
-                tmp.addCol(std::vector<double>(tmp.rowNum(), 1.0).data());
+                size_t nrow = tmp.rowNum();
+                tmp.addCol(std::vector<double>(nrow, 1.0).data());
                 tmp = ModelUtil::sigmoid(tmp * this->w);
-                for (size_t i = 0, n = tmp.rowNum(); i < n; ++i) tmp(i, 0) = tmp(i, 0) < 0.5 ? 0 : 1;
+                for (size_t i = 0; i < nrow; ++i) tmp(i, 0) = tmp(i, 0) < 0.5 ? 0 : 1;
                 return tmp;
             }
     };

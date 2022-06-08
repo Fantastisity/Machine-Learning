@@ -139,8 +139,8 @@ namespace MACHINE_LEARNING {
                 return dt(r, c);
             }
 
-            void shuffle() {
-                dt.shuffle();
+            void shuffle(size_t random_state) {
+                dt.shuffle(random_state);
             }
 
             template<typename R, typename U>
@@ -284,7 +284,10 @@ namespace MACHINE_LEARNING {
     template<typename R>
     inline std::ostream& operator<< (std::ostream& os, const DataFrame<R>& Df) {
         if (Df.ind2name) {
-            for (size_t i = 0, ncol = Df.colNum(); i < ncol; ++i) if (Df.ind2name[i]) os << Df.ind2name[i] << " ";
+            for (size_t i = 0, ncol = Df.colNum(); i < ncol; ++i) {
+                if (Df.ind2name[i]) os << Df.ind2name[i] << " ";
+                else os << '\t ';
+            }
             puts("");
         }
         os << Df.dt;

@@ -11,8 +11,9 @@ namespace MACHINE_LEARNING {
     }
 
     double LogisticRegression::loss() {
-        Matrix<double> l = -(this->y.trans() * ModelUtil::naturalLog(ModelUtil::sigmoid(this->x * this->w)) - 
-                            (1 - this->y).trans() * ModelUtil::naturalLog(1 - ModelUtil::sigmoid(this->x * this->w)));
+        Matrix<double> ypred = ModelUtil::sigmoid(this->x * this->w),
+                       l = -(this->y.trans() * ModelUtil::loge(ypred) + 
+                            (1 - this->y).trans() * ModelUtil::loge(1 - ypred));
         switch (r) {
             case Regularizor::None:
                 break;
@@ -27,7 +28,7 @@ namespace MACHINE_LEARNING {
                      ModelUtil::sum(ModelUtil::abs(this->w)) * this->lamb * this->alpha;
                 break;
         }
-        return l(0, 0);
+        return l(0, 0) / y.rowNum();
     }
 
     Matrix<double> LogisticRegression::gradient(Matrix<double>& X, Matrix<double>& Y) {

@@ -3,6 +3,7 @@
 #define DATA_FRAME_INCLUDED
 #include "../tabular-data/dataFrame.h"
 #endif
+// #define WRITE_TO_FILE
 
 enum class GDType { None, BATCH , STOCHASTIC, MINI_BATCH };
 enum class Regularizor { None, L1, L2, ENet };
@@ -25,10 +26,11 @@ namespace MACHINE_LEARNING {
                 switch (t) {
                     case GDType::BATCH: {
                         for (size_t i = 0; i < iter; ++i) {
-                            if (loss() <= eps) break;
+                            double l = loss();
                             #ifdef WRITE_TO_FILE
-                                output << i << '\t' << std::fixed << l;
+                                output << i << '\t' << std::fixed << l << '\n';
                             #endif
+                            if (l <= eps) break;
                             w -= gradient(x, y) * eta;
                         }
                         #ifdef WRITE_TO_FILE
@@ -45,13 +47,14 @@ namespace MACHINE_LEARNING {
                         for (size_t i = 0, term = 0; i < iter && !term; ++i) {
                             std::shuffle(ind, ind + n, std::default_random_engine {});
                             for (auto& j : ind) {
-                                if (loss() <= eps) {
+                                double l = loss();
+                                #ifdef WRITE_TO_FILE
+                                    output << cnt++ << '\t' << std::fixed << l << '\n';
+                                #endif
+                                if (l <= eps) {
                                     term = 1;
                                     break;
                                 }
-                                #ifdef WRITE_TO_FILE
-                                    output << cnt++ << '\t' << std::fixed << l;
-                                #endif
                                 auto x_t = x(rngSlicer(j, j + 1), rngSlicer(0, x.colNum())),
                                     y_t = y(rngSlicer(j, j + 1), rngSlicer(0, y.colNum()));
                                 w -= gradient(x_t, y_t) * eta;
@@ -76,13 +79,14 @@ namespace MACHINE_LEARNING {
                         for (size_t i = 0, term = 0; i < iter && !term; ++i) {
                             std::shuffle(ind, ind + n, std::default_random_engine {});
                             for (size_t j = 0, num; j < n; j += num) {
-                                if (loss() <= eps) {
+                                double l = loss();
+                                #ifdef WRITE_TO_FILE
+                                    output << cnt++ << '\t' << std::fixed << l << '\n';
+                                #endif
+                                if (l <= eps) {
                                     term = 1;
                                     break;
                                 }
-                                #ifdef WRITE_TO_FILE
-                                    output << cnt++ << '\t' << std::fixed << l;
-                                #endif
                                 num = std::min(static_cast<size_t>(batch_size), n - j);
                                 auto x_t = x(ptrSlicer(ind + j, num), rngSlicer(x.colNum())), 
                                         y_t = y(ptrSlicer(ind + j,num), rngSlicer(y.colNum()));

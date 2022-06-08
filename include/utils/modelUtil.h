@@ -9,8 +9,6 @@
 
 namespace MACHINE_LEARNING {
     class ModelUtil : public UtilBase {
-        template <typename...> using Void = void;
-
         template<typename U, typename R, typename T = void>
         struct isModel {
             const static bool val = 0;
@@ -38,16 +36,6 @@ namespace MACHINE_LEARNING {
                 }
         };
         public:
-            template<typename U, typename R = void>
-            struct isDataframe {
-                const static bool val = 0;
-            };
-
-            template<typename U>
-            struct isDataframe<U, Void<decltype(&U::addFeature)>> {
-                const static bool val = 1;
-            };
-            
             template<typename T>
             class LabelEncoder : public EncoderBase<T> {
                 public:
@@ -124,9 +112,10 @@ namespace MACHINE_LEARNING {
                     }
             };
 
-            static auto train_test_split(DataFrame<elem> X, DataFrame<elem> Y, const float test_size = 0.25, const bool shuffle = 0) {
+            static auto train_test_split(DataFrame<elem> X, DataFrame<elem> Y, const float test_size = 0.25, 
+                                         const bool shuffle = 0, size_t random_state = 0) {
                 size_t row = X.rowNum(), testRow = row * test_size;
-                if (shuffle) X.shuffle(), Y.shuffle();
+                if (shuffle) X.shuffle(random_state), Y.shuffle(random_state);
                 return std::make_tuple(X.iloc(rngSlicer(row - testRow),      rngSlicer(X.colNum())), 
                                        X.iloc(rngSlicer(row - testRow, row), rngSlicer(X.colNum())), 
                                        Y.iloc(rngSlicer(row - testRow),      rngSlicer(Y.colNum())), 
@@ -155,13 +144,13 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename T>
-            static auto naturalLog(const Matrix<T>& m) 
+            static auto loge(const Matrix<T>& m) 
             -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
                 size_t r = m.rowNum(), c = m.colNum();
                 Matrix<T> mat(r, c);
                 for (size_t i = 0; i < r; ++i)
                     for (size_t j = 0; j < c; ++j) 
-                        mat(i, j) = log(m(i, j));
+                        mat(i, j) = log(m(i, j) > 0 ? m(i, j) : 1e-6);
                 return mat;
             }
 

@@ -2,7 +2,7 @@
 
 namespace MACHINE_LEARNING {
     /* 
-        used for extracting the built-in type from template parameter, so that type conversion can be done implicitly
+        used for extracting the built-in type from template parameter, so that type conversion can be done implicitly;
         for instance, it allows to pass an int as argument given T is double 
     */
     template<typename R>
@@ -245,7 +245,8 @@ namespace MACHINE_LEARNING {
                 return m;
             }
 
-            void shuffle() {
+            void shuffle(size_t random_state) {
+                srand(random_state);
                 if (row > 1) 
                     for (size_t i = 0, j; i < row - 1; ++i) {
                         j = i + rand() / (RAND_MAX / (row - i) + 1);
@@ -324,7 +325,7 @@ namespace MACHINE_LEARNING {
             template<typename R>
             Matrix operator+ (R&& rht) const {
                 Matrix m = *this;
-                m += std::forward<T>(rht);
+                m += std::forward<R>(rht);
                 return m;
             }
 
