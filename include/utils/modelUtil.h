@@ -1,41 +1,44 @@
-#ifndef UTIL_BASE_INCLUDED
-#define UTIL_BASE_INCLUDED
-#include "utilityBase.h"
-#endif
+// #ifndef UTIL_BASE_INCLUDED
+// #define UTIL_BASE_INCLUDED
+// #include "utilityBase.h"
+// #endif
 #ifndef MODEL_INCLUDED
 #define MODEL_INCLUDED
 #include "../models/model.h"
 #endif
 
 namespace MACHINE_LEARNING {
-    class ModelUtil : public UtilBase {
-        template<typename U, typename R, typename T = void>
-        struct isModel {
-            const static bool val = 0;
-        };
+    using Param = std::vector<std::pair<char*, std::initializer_list<elem>>>;
+    namespace UTIL_BASE {
+        namespace MODEL_UTIL {
+            template<typename U, typename R, typename T = void>
+            struct isModel {
+                const static bool val = 0;
+            };
 
-        template<typename U, typename R>
-        struct isModel<U, R, Void<decltype(&U::template fit<R, R>)>> {
-            const static bool val = 1;
-        };
+            template<typename U, typename R>
+            struct isModel<U, R, Void<decltype(&U::template fit<R, R>)>> {
+                const static bool val = 1;
+            };
 
-        template<typename T>
-        class EncoderBase {
-            protected:
-            std::unordered_map<T, ll> mapping;
-            std::unordered_map<ll, T> reverse_mapping;
-            ll cnt;
-            bool inplace;
-            EncoderBase(const bool inplace, ll cnt) : inplace(inplace), cnt(cnt) {}
-            public:
-                void fit(const DataFrame<T>& m, const size_t col) {
-                    size_t n = m.rowNum();
-                    for (size_t i = 0; i < n; ++i) 
-                        if (!mapping.count(m(i, col))) reverse_mapping[mapping[m(i, col)] = cnt++] = m(i, col);
-                    --cnt;
-                }
-        };
-        public:
+            namespace {
+                template<typename T>
+                class EncoderBase {
+                    protected:
+                    std::unordered_map<T, ll> mapping;
+                    std::unordered_map<ll, T> reverse_mapping;
+                    ll cnt;
+                    bool inplace;
+                    EncoderBase(const bool inplace, ll cnt) : inplace(inplace), cnt(cnt) {}
+                    public:
+                        void fit(const DataFrame<T>& m, const size_t col) {
+                            size_t n = m.rowNum();
+                            for (size_t i = 0; i < n; ++i) 
+                                if (!mapping.count(m(i, col))) reverse_mapping[mapping[m(i, col)] = cnt++] = m(i, col);
+                            --cnt;
+                        }
+                };
+            }
             template<typename T>
             class LabelEncoder : public EncoderBase<T> {
                 public:
@@ -112,18 +115,12 @@ namespace MACHINE_LEARNING {
                     }
             };
 
-            static auto train_test_split(DataFrame<elem> X, DataFrame<elem> Y, const float test_size = 0.25, 
-                                         const bool shuffle = 0, size_t random_state = 0) {
-                size_t row = X.rowNum(), testRow = row * test_size;
-                if (shuffle) X.shuffle(random_state), Y.shuffle(random_state);
-                return std::make_tuple(X.iloc(rngSlicer(row - testRow),      rngSlicer(X.colNum())), 
-                                       X.iloc(rngSlicer(row - testRow, row), rngSlicer(X.colNum())), 
-                                       Y.iloc(rngSlicer(row - testRow),      rngSlicer(Y.colNum())), 
-                                       Y.iloc(rngSlicer(row - testRow, row), rngSlicer(Y.colNum())));
-            }
+            std::tuple<DataFrame<elem>, DataFrame<elem>, DataFrame<elem>, DataFrame<elem>>
+            train_test_split(DataFrame<elem> X, DataFrame<elem> Y, const float test_size = 0.25, 
+                                        const bool shuffle = 0, size_t random_state = 0);
 
             template<typename T>
-            static auto abs(const Matrix<T>& m) 
+            auto abs(const Matrix<T>& m) 
             -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
                 size_t r = m.rowNum(), c = m.colNum();
                 Matrix<T> mat(r, c);
@@ -134,7 +131,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename T>
-            static auto sigmoid(const Matrix<T>& m) 
+            auto sigmoid(const Matrix<T>& m) 
             -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
                 size_t r = m.rowNum(), c = m.colNum();
                 Matrix<T> mat(r, c);
@@ -144,7 +141,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename T>
-            static auto loge(const Matrix<T>& m) 
+            auto loge(const Matrix<T>& m) 
             -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
                 size_t r = m.rowNum(), c = m.colNum();
                 Matrix<T> mat(r, c);
@@ -155,7 +152,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename T>
-            static auto sign(const Matrix<T>& m) 
+            auto sign(const Matrix<T>& m) 
             -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
                 size_t r = m.rowNum(), c = m.colNum();
                 Matrix<T> mat(r, c);
@@ -166,7 +163,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename T>
-            static auto sum(const Matrix<T>& m)
+            auto sum(const Matrix<T>& m)
             -> typename std::enable_if<isNumerical<T>::val, T>::type {
                 T res = 0.0;
                 size_t r = m.rowNum(), c = m.colNum();
@@ -177,7 +174,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename T, typename R>
-            static double RMSE(const Matrix<T>& ypred, const Matrix<R>& ytest) {
+            double RMSE(const Matrix<T>& ypred, const Matrix<R>& ytest) {
                 Matrix<double> tmp;
                 if constexpr (std::is_same<T, double>::value && std::is_same<R, double>::value) 
                     tmp = ypred - ytest;
@@ -189,36 +186,17 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename T, typename R>
-            static double ACCURACY(const Matrix<T>& ypred, const Matrix<R>& ytest) {
+            double ACCURACY(const Matrix<T>& ypred, const Matrix<R>& ytest) {
                 size_t r = ytest.rowNum(), cnt = 0;
                 for (size_t i = 0; i < r; ++i) if (static_cast<double>(ypred(i, 0)) == static_cast<double>(ytest(i, 0))) ++cnt;
                 return 1.0 * cnt / r;
             }
 
-            static auto k_fold(const size_t k, const size_t sample_size) {
-                size_t n = static_cast<size_t>(std::ceil(sample_size / (k * 1.0))),
-                       * indTrain = (size_t*) malloc(sizeof(size_t) * k * n * (k - 1)),
-                       * indTest = (size_t*) malloc(sizeof(size_t) * k * n),
-                       * range = (size_t*) malloc(sizeof(size_t) * k * 2);
-                if (!indTrain || !indTest || !range) {
-                    std::cerr << "error malloc\n"; exit(1);
-                }
-                for (size_t i = 0, cntTrain, cntTest; i < k; ++i) {
-                    cntTrain = 0, cntTest = 0;
-                    for (size_t j = 0; j < sample_size; ++j) {
-                        if (j >= n * i && cntTest < n) {
-                            indTest[i * n + cntTest++] = j;
-                            continue;
-                        }
-                        indTrain[i * n * (k - 1) + cntTrain++] = j;
-                    }
-                    range[i << 1] = cntTrain, range[(i << 1) + 1] = cntTest;
-                }
-                return std::make_tuple(indTrain, indTest, range, n);
-            }
+            std::tuple<size_t*, size_t*, size_t*, size_t> 
+            k_fold(const size_t k, const size_t sample_size);
 
             template<typename M>
-            static double cross_validation(SupervisedModel<M>& estimator, DataFrame<elem>& X, DataFrame<elem>& Y, 
+            double cross_validation(SupervisedModel<M>& estimator, DataFrame<elem>& X, DataFrame<elem>& Y, 
                                     const char* scoring = "RMSE", size_t k = 5) {
                 if (k > X.rowNum()) k = 1;
                 auto [indTrain, indTest, range, n] = k_fold(k, X.rowNum()); 
@@ -226,9 +204,9 @@ namespace MACHINE_LEARNING {
                 auto x = X.values().template asType<double>(), y = Y.values().template asType<double>();
                 for (size_t i = 0, xcol = X.colNum(), ycol = Y.colNum(); i < k; ++i) {
                     auto xtrain = x(ptrSlicer(indTrain + i * n * (k - 1), range[i << 1]), rngSlicer(xcol)), 
-                         ytrain = y(ptrSlicer(indTrain + i * n * (k - 1), range[i << 1]), rngSlicer(ycol)),
-                         xtest  = x(ptrSlicer(indTest + i * n, range[(i << 1) + 1]),      rngSlicer(xcol)), 
-                         ytest  = y(ptrSlicer(indTest + i * n, range[(i << 1) + 1]),      rngSlicer(ycol));
+                        ytrain = y(ptrSlicer(indTrain + i * n * (k - 1), range[i << 1]), rngSlicer(ycol)),
+                        xtest  = x(ptrSlicer(indTest + i * n, range[(i << 1) + 1]),      rngSlicer(xcol)), 
+                        ytest  = y(ptrSlicer(indTest + i * n, range[(i << 1) + 1]),      rngSlicer(ycol));
                     estimator.fit(xtrain, ytrain);
                     if (!strcmp(scoring, "RMSE")) score += RMSE(estimator.predict(xtest), ytest);
                     else if (!strcmp(scoring, "ACCURACY")) score += ACCURACY(estimator.predict(xtest), ytest);
@@ -238,17 +216,18 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename M>
-            static std::pair<std::vector<std::pair<Param, double>>, double> 
-            grid_search(SupervisedModel<M>& estimator, DataFrame<elem>& X, DataFrame<elem>& Y) {
-                std::vector<std::pair<Param, double>> tmp;
-                std::vector<std::vector<std::pair<Param, double>>> param_comb;
+            std::pair<std::vector<std::pair<char*, elem>>, double> 
+            grid_search(SupervisedModel<M>& estimator, Param param_grid, DataFrame<elem>& X, DataFrame<elem>& Y) {
+                std::vector<std::pair<char*, elem>> tmp;
+                std::vector<std::vector<std::pair<char*, elem>>> param_comb;
+                size_t len = param_grid.size();
                 auto gen_comb = [&](size_t pos, auto&& gen_comb) {
-                    if (tmp.size() == estimator.param_list.size()) {
+                    if (pos == len) {
                         param_comb.push_back(tmp);
                         return;
                     }
-                    for (auto& i : estimator.param_list[pos].second) {
-                        tmp.push_back(std::make_pair(estimator.param_list[pos].first, i));
+                    for (auto& i : param_grid[pos].second) {
+                        tmp.push_back(std::make_pair(param_grid[pos].first, i));
                         gen_comb(pos + 1, gen_comb);
                         tmp.pop_back();
                     }
@@ -264,5 +243,6 @@ namespace MACHINE_LEARNING {
                 }
                 return std::make_pair(param_comb[best_ind], best_err);
             }
-    };
+        }
+    }
 }

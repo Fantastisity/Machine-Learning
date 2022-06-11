@@ -144,7 +144,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename R, typename U>
-            DataFrame iloc(slice<R>&& s1, slice<U>&& s2, bool assign_colname = 0) {
+            DataFrame iloc(UTIL_BASE::MATRIX_UTIL::slice<R>&& s1, UTIL_BASE::MATRIX_UTIL::slice<U>&& s2, bool assign_colname = 0) {
                 if (s1.size == rowNum() && s2.size == colNum()) return *this;
 
                 if (assign_colname && s2.size < colNum()) {
@@ -152,27 +152,29 @@ namespace MACHINE_LEARNING {
                     size_t cnt = 0;
                     for (auto i = s2.start; i < s2.end; ++i) {
                         size_t ind;
-                        if constexpr (MatrixUtil::isPTR<U>::val) ind = *i;
+                        if constexpr (UTIL_BASE::MATRIX_UTIL::isPTR<U>::val) ind = *i;
                         else ind = i;
 
                         colnames[cnt++] = ind2name[ind];
                     }
-                    return DataFrame(dt(std::forward<slice<R>>(s1), std::forward<slice<U>>(s2)), std::move(colnames));
+                    return DataFrame(dt(std::forward<UTIL_BASE::MATRIX_UTIL::slice<R>>(s1), 
+                                        std::forward<UTIL_BASE::MATRIX_UTIL::slice<U>>(s2)), 
+                                        std::move(colnames));
                 }
 
-                return DataFrame(dt(std::forward<slice<R>>(s1), std::forward<slice<U>>(s2)));
+                return DataFrame(dt(std::forward<UTIL_BASE::MATRIX_UTIL::slice<R>>(s1), std::forward<UTIL_BASE::MATRIX_UTIL::slice<U>>(s2)));
             }
 
             template<typename R>
-            DataFrame loc(slice<R>&& s1, std::vector<std::string> colnames, bool assign_colname = 0) {
+            DataFrame loc(UTIL_BASE::MATRIX_UTIL::slice<R>&& s1, std::vector<std::string> colnames, bool assign_colname = 0) {
                 size_t n = colnames.size();
                 assert(s1.size <= dt.row && n <= dt.col);
                 if (s1.size == dt.row && n == dt.col) return *this;
                 size_t inds[n];
                 for (size_t i = 0; i < n; ++i) inds[i] = name2ind[colnames[i]];
 
-                return assign_colname ? DataFrame(dt(std::forward<slice<R>>(s1), ptrSlicer(inds, n)), std::move(colnames)) :
-                                        DataFrame(dt(std::forward<slice<R>>(s1), ptrSlicer(inds, n)));
+                return assign_colname ? DataFrame(dt(std::forward<UTIL_BASE::MATRIX_UTIL::slice<R>>(s1), ptrSlicer(inds, n)), std::move(colnames)) :
+                                        DataFrame(dt(std::forward<UTIL_BASE::MATRIX_UTIL::slice<R>>(s1), ptrSlicer(inds, n)));
             }
 
             auto& operator= (const DataFrame& df) {
@@ -267,6 +269,12 @@ namespace MACHINE_LEARNING {
 
             void dim() const {
                 dt.dim();
+            }
+
+            const std::unordered_set<T> unique(const size_t ind) {
+                std::unordered_set<T> tmp;
+                for (size_t i = 0, n = rowNum(); i < n; ++i) tmp.insert(dt(i, ind));
+                return tmp;
             }
 
             Matrix<T> values() const {

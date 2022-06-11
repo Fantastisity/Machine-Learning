@@ -221,7 +221,7 @@ namespace MACHINE_LEARNING {
             Matrix<R> asType() const {
                 if constexpr (std::is_same<T, R>::value) return *this;
                 Matrix<R> m(row, col);
-                MatrixUtil::conv_type(m.mat, mat, row * col);
+                UTIL_BASE::MATRIX_UTIL::conv_type(m.mat, mat, row * col);
                 return m;
             }
 
@@ -234,7 +234,7 @@ namespace MACHINE_LEARNING {
             Matrix inverse() {
                 assert(row == col);
                 Matrix m = *this, idm = eye(row);
-                assert(MatrixUtil::gauss_jordan_elimination(m.mat, idm.mat, row, col, col, 1));
+                assert(UTIL_BASE::MATRIX_UTIL::gauss_jordan_elimination(m.mat, idm.mat, row, col, col, 1));
                 return idm;
             }
 
@@ -263,16 +263,16 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename Q, typename U>
-            auto operator()(slice<Q>&& s1, slice<U>&& s2) {
+            auto operator()(UTIL_BASE::MATRIX_UTIL::slice<Q>&& s1, UTIL_BASE::MATRIX_UTIL::slice<U>&& s2) {
                 Matrix<T> subMat(s1.size, s2.size);
                 size_t r = 0, c, tmp_r, tmp_c;
                 for (auto i = s1.start; i < s1.end; ++i, ++r) {
                     c = 0;
                     for (auto j = s2.start; j < s2.end; ++j, ++c) {
-                        if constexpr (MatrixUtil::isPTR<Q>::val) tmp_r = *i;
+                        if constexpr (UTIL_BASE::MATRIX_UTIL::isPTR<Q>::val) tmp_r = *i;
                         else tmp_r = i;
 
-                        if constexpr (MatrixUtil::isPTR<U>::val) tmp_c = *j;
+                        if constexpr (UTIL_BASE::MATRIX_UTIL::isPTR<U>::val) tmp_c = *j;
                         else tmp_c = j;
 
                         subMat.insert(r, c, mat[tmp_r * col + tmp_c]);
@@ -289,7 +289,7 @@ namespace MACHINE_LEARNING {
                 assert(col == rht.row);
                 using tp = decltype(std::declval<T>() * std::declval<R>());
                 Matrix<tp> m(row, rht.col);
-                MatrixUtil::Mult<T, R, tp>::mult(mat, rht.mat, m.mat, row, col, rht.col);
+                UTIL_BASE::MATRIX_UTIL::Mult<T, R, tp>::mult(mat, rht.mat, m.mat, row, col, rht.col);
                 return m;
             }
 
@@ -298,7 +298,7 @@ namespace MACHINE_LEARNING {
                 assert(col == rht.row);
                 using tp = decltype(std::declval<T>() * std::declval<R>());
                 Matrix<tp> m(row, rht.col);
-                MatrixUtil::Mult<T, R, tp>::mult(mat, rht.mat, m.mat, row, col, rht.col);
+                UTIL_BASE::MATRIX_UTIL::Mult<T, R, tp>::mult(mat, rht.mat, m.mat, row, col, rht.col);
                 return m;
             }
 

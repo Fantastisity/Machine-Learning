@@ -12,13 +12,13 @@ namespace MACHINE_LEARNING {
 
             template<typename T, typename R>
             void fit(T&& x, R&& y, const uint8_t verbose = 0) {
-                if constexpr (ModelUtil::isDataframe<typename std::remove_reference<T>::type>::val) 
+                if constexpr (UTIL_BASE::isDataframe<typename std::remove_reference<T>::type>::val) 
                     this->x = x.values().template asType<double>();
                 else this->x = x;
 
                 this->x.addCol(std::vector<double>(x.rowNum(), 1.0).data());
 
-                if constexpr (ModelUtil::isDataframe<typename std::remove_reference<R>::type>::val) 
+                if constexpr (UTIL_BASE::isDataframe<typename std::remove_reference<R>::type>::val) 
                     this->y = y.values().template asType<double>();
                 else this->y = y;
 
@@ -35,7 +35,7 @@ namespace MACHINE_LEARNING {
             template<typename T>
             Matrix<double> predict(T&& xtest) {
                 Matrix<double> tmp{0};
-                if constexpr (ModelUtil::isDataframe<typename std::remove_reference<T>::type>::val) 
+                if constexpr (UTIL_BASE::isDataframe<typename std::remove_reference<T>::type>::val) 
                     tmp = xtest.values().template asType<double>();
                 else tmp = xtest;
                 

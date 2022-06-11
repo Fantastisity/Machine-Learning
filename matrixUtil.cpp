@@ -18,6 +18,4 @@ namespace MACHINE_LEARNING {
         }
         return os;
     }
-
-    MatrixUtil matUtil;
 }

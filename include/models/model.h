@@ -7,15 +7,13 @@
 
 enum class GDType { None, BATCH , STOCHASTIC, MINI_BATCH };
 enum class Regularizor { None, L1, L2, ENet };
-enum class Param {ETA, EPSILON, ITERATION, REGULARIZOR, LAMBDA, ALPHA, GD_TYPE, BATCH_SIZE};
 
 namespace MACHINE_LEARNING {
     template<typename M>
     class SupervisedModel {
-        friend class ModelUtil;
         protected:
             std::ofstream output;
-            std::vector<std::pair<Param, std::vector<double>>> param_list;
+            bool* seen = nullptr;
             Matrix<double> x{0}, y{0}, w{0};
             double eta = 1e-9, lamb, alpha, eps = 1e-2;
             ll iter = 1000, batch_size;
@@ -47,6 +45,7 @@ namespace MACHINE_LEARNING {
                         for (size_t i = 0, term = 0; i < iter && !term; ++i) {
                             std::shuffle(ind, ind + n, std::default_random_engine {});
                             for (auto& j : ind) {
+                                if (!seen[j]) seen[j] = 1;
                                 double l = loss();
                                 #ifdef WRITE_TO_FILE
                                     output << cnt++ << '\t' << std::fixed << l << '\n';
@@ -149,29 +148,19 @@ namespace MACHINE_LEARNING {
                 pretty_print("", '*', 58, '*');
             }
         public:
-            virtual ~SupervisedModel(){}
+            virtual ~SupervisedModel(){
+                if (seen) free(seen);
+            }
             void set_eta(const double eta) {
                 this->eta = eta;
-            }
-            void set_eta(const std::initializer_list<double>&& eta) {
-                if (eta.size() == 1) this->eta = *eta.begin();
-                else param_list.emplace_back(std::make_pair(Param::ETA, eta));
             }
 
             void set_epsilon(const double eps) {
                 this->eps = eps;
             }
-            void set_epsilon(const std::initializer_list<double>&& eps) {
-                if (eps.size() == 1) this->eps = *eps.begin();
-                else param_list.emplace_back(std::make_pair(Param::EPSILON, eps));
-            }
 
             void set_iteration(const ll iter) {
                 this->iter = iter;
-            }
-            void set_iteration(const std::initializer_list<double>&& iter) {
-                if (iter.size() == 1) this->iter = *iter.begin();
-                else param_list.emplace_back(std::make_pair(Param::ITERATION, iter));
             }
 
             void set_regularizor(const Regularizor r, const double lamb = 1, const double alpha = 0.5) {
@@ -179,56 +168,22 @@ namespace MACHINE_LEARNING {
                 this->lamb = lamb;
                 this->alpha = alpha;
             }
-            void set_regularizor(
-                const std::initializer_list<double>&& r, 
-                const std::initializer_list<double>&& lamb = {1.0}, 
-                const std::initializer_list<double>&& alpha = {0.5}) {
-                if (r.size() == 1) this->r = static_cast<Regularizor>((size_t) *r.begin());
-                else param_list.emplace_back(std::make_pair(Param::REGULARIZOR, r));
-                if (lamb.size() == 1) this->lamb = *lamb.begin();
-                else param_list.emplace_back(std::make_pair(Param::LAMBDA, lamb));
-                if (alpha.size() == 1) this->alpha = *alpha.begin();
-                else param_list.emplace_back(std::make_pair(Param::ALPHA, alpha));
-            }
 
             void set_gd_type(const GDType t, const ll batch_size = 64) {
                 this->t = t;
                 this->batch_size = batch_size;
             }
-            void set_gd_type(const std::initializer_list<double>&& t, const std::initializer_list<double>&& batch_size = {64}) {
-                if (t.size() == 1) this->t = static_cast<GDType>((size_t) *t.begin());
-                else param_list.emplace_back(std::make_pair(Param::GD_TYPE, t));
-                if (batch_size.size() == 1) this->batch_size = *batch_size.begin();
-                else param_list.emplace_back(std::make_pair(Param::BATCH_SIZE, batch_size));
-            }
 
-            void set_params(std::vector<std::pair<Param, double>>& grid) {
+            void set_params(std::vector<std::pair<char*, elem>>& grid) {
                 for (auto& i : grid) {
-                    switch (i.first) {
-                        case Param::ETA:
-                            this->eta = i.second;
-                            break;
-                        case Param::EPSILON:
-                            this->eps = i.second;
-                            break;
-                        case Param::ITERATION:
-                            this->iter = i.second;
-                            break;
-                        case Param::REGULARIZOR:
-                            this->r = static_cast<Regularizor>((size_t) i.second);
-                            break;
-                        case Param::LAMBDA:
-                            this->lamb = i.second;
-                            break;
-                        case Param::ALPHA:
-                            this->alpha = i.second;
-                            break;
-                        case Param::GD_TYPE:
-                            this->t = static_cast<GDType>((size_t) i.second);
-                            break;
-                        case Param::BATCH_SIZE:
-                            this->batch_size = i.second;
-                    } 
+                    if (!strcmp(i.first, "eta")) this->eta = i.second;
+                    else if (!strcmp(i.first, "epsilon")) this->eps = i.second;
+                    else if (!strcmp(i.first, "iteration")) this->iter = i.second;
+                    else if (!strcmp(i.first, "regularizor")) this->r = static_cast<Regularizor>((size_t) i.second);
+                    else if (!strcmp(i.first, "lambda")) this->lamb = i.second;
+                    else if (!strcmp(i.first, "alpha")) this->alpha = i.second;
+                    else if (!strcmp(i.first, "gd_type")) this->t = static_cast<GDType>((size_t) i.second);
+                    else if (!strcmp(i.first, "batch_size")) this->batch_size = i.second;
                 }
             }
             template<typename T, typename R>
