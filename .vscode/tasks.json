@@ -10,7 +10,12 @@
 				"-w",
 				"-O1",
                 "-stdlib=libc++",
-                "*.cpp",
+                "$(find",
+                "${fileDirname}",
+                "-type",
+                "f",
+                "-iregex",
+                "'.*\\.cpp')",
                 "-o",
                 "${fileBasenameNoExtension}",
                 "--debug"

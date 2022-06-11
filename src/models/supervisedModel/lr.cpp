@@ -1,6 +1,6 @@
 #ifndef LR_INCLUDED
 #define LR_INCLUDED
-#include "include/models/supervisedModel/lr.h"
+#include "lr.h"
 #endif
 
 namespace MACHINE_LEARNING {

@@ -1,6 +1,6 @@
 #ifndef OLS_INCLUDED
 #define OLS_INCLUDED
-#include "include/models/supervisedModel/ols.h"
+#include "ols.h"
 #endif
 
 namespace MACHINE_LEARNING {

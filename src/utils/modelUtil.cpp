@@ -1,6 +1,6 @@
 #ifndef MODEL_UTIL_INCLUDED
 #define MODEL_UTIL_INCLUDED
-#include "include/utils/modelUtil.h"
+#include "modelUtil.h"
 #endif
 
 namespace MACHINE_LEARNING {

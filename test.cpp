@@ -1,14 +1,14 @@
 #ifndef PARSER_INCLUDED
 #define PARSER_INCLUDED
-#include "include/utils/parser.h"
+#include "src/utils/parser.h"
 #endif
 #ifndef OLS_INCLUDED
 #define OLS_INCLUDED
-#include "include/models/supervisedModel/ols.h"
+#include "src/models/supervisedModel/ols.h"
 #endif
 #ifndef LR_INCLUDED
 #define LR_INCLUDED
-#include "include/models/supervisedModel/lr.h"
+#include "src/models/supervisedModel/lr.h"
 #endif
 
 int main() {

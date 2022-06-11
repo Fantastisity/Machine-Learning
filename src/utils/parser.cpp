@@ -1,6 +1,6 @@
 #ifndef PARSER_INCLUDED
 #define PARSER_INCLUDED
-#include "include/utils/parser.h"
+#include "parser.h"
 #endif
 
 namespace MACHINE_LEARNING {
