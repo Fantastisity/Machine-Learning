@@ -209,7 +209,7 @@ namespace MACHINE_LEARNING {
                         ytest  = y(ptrSlicer(indTest + i * n, range[(i << 1) + 1]),      rngSlicer(ycol));
                     estimator.fit(xtrain, ytrain);
                     if (!strcmp(scoring, "RMSE")) score += RMSE(estimator.predict(xtest), ytest);
-                    else if (!strcmp(scoring, "ACCURACY")) score += ACCURACY(estimator.predict(xtest), ytest);
+                    else if (!strcmp(scoring, "ACC")) score += ACCURACY(estimator.predict(xtest), ytest);
                 }
                 free(indTrain), free(indTest), free(range);
                 return score / k;

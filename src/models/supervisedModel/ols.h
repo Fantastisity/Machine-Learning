@@ -26,7 +26,14 @@ namespace MACHINE_LEARNING {
                 
                 if (this->t == GDType::None) this->w = ((this->x).trans() * this->x).inverse() * (this->x).trans() * this->y; // Closed-form solution
                 else {
-                    this->w = Matrix<double>(std::vector<std::vector<double>>(this->x.colNum(), std::vector<double>(1, 0.0)));
+                    if (t == GDType::SAG) {
+                        if (!(seen = (bool*) calloc(x.rowNum(), 1))) {
+                            std::cerr << "error calloc\n"; exit(1);
+                        }
+                        this->gradient_table = Matrix<double>(this->x.rowNum(), this->x.colNum());
+                        this->gradient_sum = Matrix<double>(this->x.colNum(), 1);
+                    }
+                    this->w = Matrix<double>(this->x.colNum(), 1);
                     gradient_descent();
                 }
                 if (verbose) print_weights();

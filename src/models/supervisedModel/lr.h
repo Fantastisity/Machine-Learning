@@ -22,14 +22,17 @@ namespace MACHINE_LEARNING {
                     this->y = y.values().template asType<double>();
                 else this->y = y;
 
-                if (t == GDType::STOCHASTIC)
+                if (t == GDType::SAG) {
                     if (!(seen = (bool*) calloc(x.rowNum(), 1))) {
                         std::cerr << "error calloc\n"; exit(1);
                     }
+                    this->gradient_table = Matrix<double>(this->x.rowNum(), this->x.colNum());
+                    this->gradient_sum = Matrix<double>(this->x.colNum(), 1);
+                }
 
                 if (verbose == 2) print_params(), puts("");
                 
-                this->w = Matrix<double>(std::vector<std::vector<double>>(this->x.colNum(), std::vector<double>(1, 0.0)));
+                this->w = Matrix<double>(this->x.colNum(), 1);
                 gradient_descent();
                 if (verbose) print_weights();
             }

@@ -170,7 +170,7 @@ namespace MACHINE_LEARNING {
                 m = nullptr;
             }
 
-            void dropCol(size_t c) {
+            void dropCol(size_t c) { // Single column
                 assert(c < col);
                 size_t* ind = (size_t*) malloc(sizeof(size_t) * (col - 1));
                 if (!ind) {
@@ -183,7 +183,7 @@ namespace MACHINE_LEARNING {
                 *this = (*this)(rngSlicer(row), ptrSlicer(ind, col - 1));
             }
 
-            void dropCol(size_t* c, size_t n) {
+            void dropCol(size_t* c, size_t n) { // Multiple columns
                 assert(n <= col);
                 size_t* ind = (size_t*) malloc(sizeof(size_t) * (col - n));
                 if (!ind) {
@@ -252,6 +252,10 @@ namespace MACHINE_LEARNING {
                         j = i + rand() / (RAND_MAX / (row - i) + 1);
                         std::swap_ranges(mat + i * col, mat + i * col + col, mat + j * col);
                     }
+            }
+
+            T* value() {
+                return mat;
             }
 
             ~Matrix() {

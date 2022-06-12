@@ -5,7 +5,7 @@
 #endif
 // #define WRITE_TO_FILE
 
-enum class GDType { None, BATCH , STOCHASTIC, MINI_BATCH };
+enum class GDType { None, BATCH , SAG, MINI_BATCH };
 enum class Regularizor { None, L1, L2, ENet };
 
 namespace MACHINE_LEARNING {
@@ -14,7 +14,7 @@ namespace MACHINE_LEARNING {
         protected:
             std::ofstream output;
             bool* seen = nullptr;
-            Matrix<double> x{0}, y{0}, w{0};
+            Matrix<double> x{0}, y{0}, w{0}, gradient_table{0}, gradient_sum{0};
             double eta = 1e-9, lamb, alpha, eps = 1e-2;
             ll iter = 1000, batch_size;
             Regularizor r = Regularizor::None;
@@ -36,16 +36,15 @@ namespace MACHINE_LEARNING {
                         #endif
                         return;
                     }
-                    case GDType::STOCHASTIC: {
-                        size_t n = x.rowNum(), ind[n];
-                        for (size_t i = 0; i < n; ++i) ind[i] = i;
+                    case GDType::SAG: {
+                        size_t m = x.rowNum(), ind[m];
+                        for (size_t i = 0; i < m; ++i) ind[i] = i;
                         #ifdef WRITE_TO_FILE
                             ll cnt = 0;
                         #endif
                         for (size_t i = 0, term = 0; i < iter && !term; ++i) {
-                            std::shuffle(ind, ind + n, std::default_random_engine {});
+                            std::shuffle(ind, ind + m, std::default_random_engine {});
                             for (auto& j : ind) {
-                                if (!seen[j]) seen[j] = 1;
                                 double l = loss();
                                 #ifdef WRITE_TO_FILE
                                     output << cnt++ << '\t' << std::fixed << l << '\n';
@@ -55,8 +54,18 @@ namespace MACHINE_LEARNING {
                                     break;
                                 }
                                 auto x_t = x(rngSlicer(j, j + 1), rngSlicer(0, x.colNum())),
-                                    y_t = y(rngSlicer(j, j + 1), rngSlicer(0, y.colNum()));
-                                w -= gradient(x_t, y_t) * eta;
+                                    y_t = y(rngSlicer(j, j + 1), rngSlicer(0, y.colNum())),
+                                    dL = gradient(x_t, y_t);
+                                
+                                if (!seen[j]) {
+                                    seen[j] = 1;
+                                    for (size_t k = 0, n = x.colNum(); k < n; ++k) gradient_table(j, k) = dL(k, 0);
+                                    gradient_sum += dL;
+                                }
+                                else for (size_t k = 0, n = x.colNum(); k < n; ++k) 
+                                    gradient_sum(k, 0) += (gradient_table(j, k) = dL(k, 0) - gradient_table(j, k));
+                                
+                                w -= gradient_sum * (eta / m);
                             }
                         }
                         #ifdef WRITE_TO_FILE
@@ -110,8 +119,8 @@ namespace MACHINE_LEARNING {
                     case GDType::BATCH: 
                         pretty_print("gradient descent type:", ' ', 29, "BGD");
                         break;
-                    case GDType::STOCHASTIC:
-                        pretty_print("gradient descent type:", ' ', 29, "SGD");
+                    case GDType::SAG:
+                        pretty_print("gradient descent type:", ' ', 29, "SAG");
                         break;
                     case GDType::MINI_BATCH:
                         pretty_print("gradient descent type:", ' ', 29, "MBGD"),
