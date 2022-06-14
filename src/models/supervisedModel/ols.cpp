@@ -29,7 +29,7 @@ namespace MACHINE_LEARNING {
         return l(0, 0);
     }
 
-    Matrix<double> LinearRegression::gradient(Matrix<double>& X, Matrix<double>& Y) {
+    Matrix<double> LinearRegression::gradient(const Matrix<double>& X, const Matrix<double>& Y) {
         Matrix<double> grad = X.trans() * (X * this->w - Y);
         switch (r) {
             case Regularizor::None:

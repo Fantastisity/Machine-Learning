@@ -6,7 +6,7 @@
 namespace MACHINE_LEARNING {
     class LinearRegression : public SupervisedModel<LinearRegression> {
             double loss();
-            Matrix<double> gradient(Matrix<double>& X, Matrix<double>& Y);
+            Matrix<double> gradient(const Matrix<double>& X, const Matrix<double>& Y);
         public:
             LinearRegression();
 

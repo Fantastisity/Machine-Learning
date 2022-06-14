@@ -148,7 +148,7 @@ namespace MACHINE_LEARNING {
             }
 
             void dim() const {
-                std::cout << row << ", " << col << '\n';
+                std::cout << "[" << row << ", " << col << "]\n";
             }
 
             template<typename R>
@@ -238,10 +238,23 @@ namespace MACHINE_LEARNING {
                 return idm;
             }
 
-            Matrix trans() {
+            Matrix trans() const {
                 Matrix m(col, row);
-                for (size_t i = 0; i < row; ++i)
-                    for (size_t j = 0; j < col; ++j) m.insert(j, i, mat[i * col + j]);
+                for (size_t i = 0; i < row; i += 6) 
+                    for (size_t j = 0; j < col; j += 4) 
+                        for (size_t k = i, end = i + 6 < row ? i + 6 : row; k < end; ++k) {
+                            T c1, c2, c3, c4;
+                            if (j + 3 < col) {
+                                c1 = mat[k * col + j], c2 = mat[k * col + j + 1], c3 = mat[k * col + j + 2], c4 = mat[k * col + j + 3];
+                                m(j, k) = c1, m(j + 1, k) = c2, m(j + 2, k) = c3, m(j + 3, k) = c4;
+                            } else if (j + 2 < col) {
+                                c1 = mat[k * col + j], c2 = mat[k * col + j + 1], c3 = mat[k * col + j + 2];
+                                m(j, k) = c1, m(j + 1, k) = c2, m(j + 2, k) = c3;
+                            } else if (j + 1 < col) {
+                                c1 = mat[k * col + j], c2 = mat[k * col + j + 1];
+                                m(j, k) = c1, m(j + 1, k) = c2;
+                            } else c1 = mat[k * col + j], m(j, k) = c1;
+                        }
                 return m;
             }
 
@@ -267,19 +280,19 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename Q, typename U>
-            auto operator()(UTIL_BASE::MATRIX_UTIL::slice<Q>&& s1, UTIL_BASE::MATRIX_UTIL::slice<U>&& s2) {
-                Matrix<T> subMat(s1.size, s2.size);
-                size_t r = 0, c, tmp_r, tmp_c;
-                for (auto i = s1.start; i < s1.end; ++i, ++r) {
+            auto operator()(UTIL_BASE::MATRIX_UTIL::slice<Q>&& row_slice, UTIL_BASE::MATRIX_UTIL::slice<U>&& col_slice) {
+                Matrix<T> subMat(row_slice.size, col_slice.size);
+                size_t r = 0, c, r_ind, c_ind;
+                for (auto i = row_slice.start; i < row_slice.end; ++i, ++r) {
                     c = 0;
-                    for (auto j = s2.start; j < s2.end; ++j, ++c) {
-                        if constexpr (UTIL_BASE::MATRIX_UTIL::isPTR<Q>::val) tmp_r = *i;
-                        else tmp_r = i;
+                    for (auto j = col_slice.start; j < col_slice.end; ++j, ++c) {
+                        if constexpr (UTIL_BASE::MATRIX_UTIL::isPTR<Q>::val) r_ind = *i;
+                        else r_ind = i;
 
-                        if constexpr (UTIL_BASE::MATRIX_UTIL::isPTR<U>::val) tmp_c = *j;
-                        else tmp_c = j;
+                        if constexpr (UTIL_BASE::MATRIX_UTIL::isPTR<U>::val) c_ind = *j;
+                        else c_ind = j;
 
-                        subMat.insert(r, c, mat[tmp_r * col + tmp_c]);
+                        subMat.insert(r, c, mat[r_ind * col + c_ind]);
                     }
                 }
                 return subMat;

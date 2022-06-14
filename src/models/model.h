@@ -63,7 +63,7 @@ namespace MACHINE_LEARNING {
                                     gradient_sum += dL;
                                 }
                                 else for (size_t k = 0, n = x.colNum(); k < n; ++k) 
-                                    gradient_sum(k, 0) += (gradient_table(j, k) = dL(k, 0) - gradient_table(j, k));
+                                    gradient_sum(k, 0) += dL(k, 0) - gradient_table(j, k), gradient_table(j, k) = dL(k, 0);
                                 
                                 w -= gradient_sum * (eta / m);
                             }
@@ -97,7 +97,7 @@ namespace MACHINE_LEARNING {
                                 }
                                 num = std::min(static_cast<size_t>(batch_size), n - j);
                                 auto x_t = x(ptrSlicer(ind + j, num), rngSlicer(x.colNum())), 
-                                        y_t = y(ptrSlicer(ind + j,num), rngSlicer(y.colNum()));
+                                     y_t = y(ptrSlicer(ind + j,num), rngSlicer(y.colNum()));
                                 w -= gradient(x_t, y_t) * eta;
                             }
                         }
@@ -110,7 +110,7 @@ namespace MACHINE_LEARNING {
             }
 
             virtual double loss(){}
-            virtual Matrix<double> gradient(Matrix<double>& X, Matrix<double>& Y){}
+            virtual Matrix<double> gradient(const Matrix<double>& X, const Matrix<double>& Y){}
             void print_params() {
                 pretty_print("", '*', 58, '*');
                 pretty_print("", ' ', 38, "Parameter Settings");
@@ -158,7 +158,7 @@ namespace MACHINE_LEARNING {
             }
         public:
             virtual ~SupervisedModel(){
-                if (seen) free(seen);
+                if (seen) free(seen), seen = nullptr;
             }
             void set_eta(const double eta) {
                 this->eta = eta;
@@ -185,7 +185,7 @@ namespace MACHINE_LEARNING {
 
             void set_params(std::vector<std::pair<char*, elem>>& grid) {
                 for (auto& i : grid) {
-                    if (!strcmp(i.first, "eta")) this->eta = i.second;
+                    if      (!strcmp(i.first, "eta")) this->eta = i.second;
                     else if (!strcmp(i.first, "epsilon")) this->eps = i.second;
                     else if (!strcmp(i.first, "iteration")) this->iter = i.second;
                     else if (!strcmp(i.first, "regularizor")) this->r = static_cast<Regularizor>((size_t) i.second);

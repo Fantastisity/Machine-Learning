@@ -123,7 +123,6 @@ namespace MACHINE_LEARNING {
                         }
                     }
                 }
-
                 return 1;
             }
 

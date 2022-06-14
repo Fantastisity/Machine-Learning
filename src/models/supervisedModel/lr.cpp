@@ -31,7 +31,7 @@ namespace MACHINE_LEARNING {
         return l(0, 0) / y.rowNum();
     }
 
-    Matrix<double> LogisticRegression::gradient(Matrix<double>& X, Matrix<double>& Y) {
+    Matrix<double> LogisticRegression::gradient(const Matrix<double>& X, const Matrix<double>& Y) {
         Matrix<double> grad = X.trans() * (UTIL_BASE::MODEL_UTIL::sigmoid(X * this->w) - Y);
         switch (r) {
             case Regularizor::None:
