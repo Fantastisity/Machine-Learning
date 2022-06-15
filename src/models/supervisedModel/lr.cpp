@@ -43,7 +43,8 @@ namespace MACHINE_LEARNING {
                 grad += (this->w.trans() * this->w * this->lamb)(0, 0);
                 break;
             case Regularizor::ENet:
-                grad += UTIL_BASE::MODEL_UTIL::sign(this->w) * this->lamb * this->alpha + (this->w.trans() * this->w * this->lamb)(0, 0) * (1 - this->alpha);
+                grad += UTIL_BASE::MODEL_UTIL::sign(this->w) * this->lamb * this->alpha + 
+                        (this->w.trans() * this->w * this->lamb)(0, 0) * (1 - this->alpha);
                 break;
         }
         return grad;

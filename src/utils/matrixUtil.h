@@ -34,7 +34,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename T, typename R>
-            void conv_type(T* res, R* mat, const size_t cap) {
+            inline void conv_type(T* res, R* mat, const size_t cap) {
                 for (size_t i = 0; i < cap; ++i) {
                     res[i] = static_cast<T>(mat[i]);
                 }
@@ -51,7 +51,7 @@ namespace MACHINE_LEARNING {
             };
 
             template<typename T>
-            bool partial_pivoting(T* a, T* b, const size_t i, const size_t m, const size_t na, const size_t nb) {
+            inline bool partial_pivoting(T* a, T* b, const size_t i, const size_t m, const size_t na, const size_t nb) {
                 T tmp = a[i * na + i];
                 size_t swap_ind = -1;
                 for (size_t j = i + 1; j < m; ++j) 
@@ -66,7 +66,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename T>
-            bool gauss_elimination(T* a, T* b, const size_t m, const size_t na, const size_t nb, bool check_invertible = 0) {
+            inline bool gauss_elimination(T* a, T* b, const size_t m, const size_t na, const size_t nb, bool check_invertible = 0) {
                 assert(a != nullptr);
                 for (size_t i = 0, r = 0; i < na - 1 && r < m; ++i, ++r) {
                     while (!partial_pivoting(a, b, i, m, na, nb)) {
@@ -87,7 +87,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename T>
-            bool gauss_jordan_elimination(T* a, T* b, const size_t m, const size_t na, const size_t nb, bool check_invertible = 0) {
+            inline bool gauss_jordan_elimination(T* a, T* b, const size_t m, const size_t na, const size_t nb, bool check_invertible = 0) {
                 assert(a != nullptr);
                 double tmp;
                 for (size_t i = 0, r = 0; i < na && r < m; ++i, ++r) {

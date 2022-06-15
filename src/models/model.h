@@ -20,6 +20,31 @@ namespace MACHINE_LEARNING {
             Regularizor r = Regularizor::None;
             GDType t = GDType::None;
 
+            template<typename T, typename R>
+            void init(T&& x, R&& y) {
+                if constexpr (UTIL_BASE::isDataframe<typename std::remove_reference<T>::type>::val) 
+                    this->x = x.values().template asType<double>();
+                else if constexpr (UTIL_BASE::isMatrix<typename std::remove_reference<T>::type>::val) 
+                    this->x = x.template asType<double>();
+                else this->x = std::forward<T>(x);
+
+                this->x.addCol(std::vector<double>(x.rowNum(), 1.0).data());
+
+                 if constexpr (UTIL_BASE::isDataframe<typename std::remove_reference<R>::type>::val) 
+                    this->y = y.values().template asType<double>();
+                else if constexpr (UTIL_BASE::isMatrix<typename std::remove_reference<R>::type>::val)
+                    this->y = y.template asType<double>();
+                else this->y = std::forward<T>(y);
+
+                if (t == GDType::SAG) {
+                    if (!(seen = (bool*) calloc(x.rowNum(), 1))) {
+                        std::cerr << "error calloc\n"; exit(1);
+                    }
+                    this->gradient_table = Matrix<double>(this->x.rowNum(), this->x.colNum());
+                    this->gradient_sum = Matrix<double>(this->x.colNum(), 1);
+                }
+            }
+
             void gradient_descent() {
                 switch (t) {
                     case GDType::BATCH: {
@@ -53,9 +78,8 @@ namespace MACHINE_LEARNING {
                                     term = 1;
                                     break;
                                 }
-                                auto x_t = x(rngSlicer(j, j + 1), rngSlicer(0, x.colNum())),
-                                    y_t = y(rngSlicer(j, j + 1), rngSlicer(0, y.colNum())),
-                                    dL = gradient(x_t, y_t);
+                                auto dL = gradient(x(rngSlicer(j, j + 1), rngSlicer(0, x.colNum())), 
+                                                   y(rngSlicer(j, j + 1), rngSlicer(0, y.colNum())));
                                 
                                 if (!seen[j]) {
                                     seen[j] = 1;
@@ -96,9 +120,8 @@ namespace MACHINE_LEARNING {
                                     break;
                                 }
                                 num = std::min(static_cast<size_t>(batch_size), n - j);
-                                auto x_t = x(ptrSlicer(ind + j, num), rngSlicer(x.colNum())), 
-                                     y_t = y(ptrSlicer(ind + j,num), rngSlicer(y.colNum()));
-                                w -= gradient(x_t, y_t) * eta;
+                                w -= gradient(x(ptrSlicer(ind + j, num), rngSlicer(x.colNum())), 
+                                              y(ptrSlicer(ind + j, num), rngSlicer(y.colNum()))) * eta;
                             }
                         }
                         #ifdef WRITE_TO_FILE
@@ -112,49 +135,48 @@ namespace MACHINE_LEARNING {
             virtual double loss(){}
             virtual Matrix<double> gradient(const Matrix<double>& X, const Matrix<double>& Y){}
             void print_params() {
-                pretty_print("", '*', 58, '*');
-                pretty_print("", ' ', 38, "Parameter Settings");
-                pretty_print("", '*', 58, '*');
+                printf("**********************************************************\n");
+                printf("\t\t\t\t\tParameter Settings\n");
+                printf("**********************************************************\n");
                 switch (t) { 
                     case GDType::BATCH: 
-                        pretty_print("gradient descent type:", ' ', 29, "BGD");
+                        printf("gradient descent type:\t\t\t\t\t\t\tBGD\n");
                         break;
                     case GDType::SAG:
-                        pretty_print("gradient descent type:", ' ', 29, "SAG");
+                        printf("gradient descent type:\t\t\t\t\t\t\tSAG\n");
                         break;
                     case GDType::MINI_BATCH:
-                        pretty_print("gradient descent type:", ' ', 29, "MBGD"),
-                        pretty_print("batch size:", ' ', 40, batch_size);
+                        printf("gradient descent type:\t\t\t\t\t\t  m-BGD\n");
+                        printf("batch size:\t\t\t\t\t\t\t\t\t\t %lld\n", batch_size);
                         break;
                 }
                 if (r != Regularizor::None) {
                     switch (r) {
                         case Regularizor::L1:
-                            pretty_print("regularizor:", ' ', 39, "Lasso");
+                            printf("regularizor:\t\t\t\t\t\t\t\t  Lasso\n");
                             break;
                         case Regularizor::L2:
-                            pretty_print("regularizor:", ' ', 39, "Ridge");
+                            printf("regularizor:\t\t\t\t\t\t\t\t  Ridge\n");
                             break;
                         case Regularizor::ENet:
-                            pretty_print("regularizor:", ' ', 39, "Elastic Net"),
-                            pretty_print("alpha:", ' ', 45, alpha);
+                            printf("regularizor:\t\t\t\t\t\t\tElastic Net\n");
+                            printf("alpha:\t\t\t\t\t\t\t\t\t\t\t%.1f\n", alpha);
                             break;
                     };
-                    pretty_print("lambda:", ' ', 44, lamb);
+                    printf("lambda:\t\t\t\t\t\t\t\t\t\t\t%.1f\n", lamb);
                 }
                 
-                pretty_print("eta:", ' ', 47, eta);
-                pretty_print("epsilon:", ' ', 43, eps);
-                pretty_print("iterations:", ' ', 40, iter);
-                pretty_print("", '*', 58, '*');
+                printf("eta:\t\t\t\t\t\t\t\t\t\t  %.0e\n", eta);
+                printf("epsilon:\t\t\t\t\t\t\t\t\t   %.2f\n", eps);
+                printf("iterations:\t\t\t\t\t\t\t\t\t   %lld\n\n", iter);
             }
 
             void print_weights() {
-                pretty_print("", '*', 58, '*');
-                pretty_print("", ' ', 35, "Final Weights");
-                pretty_print("", '*', 58, '*');
-                for (size_t i = 0, r = w.rowNum(); i < r; ++i) pretty_print(i, ' ', 50, w(i, 0));
-                pretty_print("", '*', 58, '*');
+                printf("**********************************************************\n");
+                printf("\t\t\t\t\t  Final Weights\n");
+                printf("**********************************************************\n");
+                for (size_t i = 0, r = w.rowNum(); i < r; ++i) printf("%lld\t\t\t\t\t\t\t\t\t\t %.8f\n", i, w(i, 0));
+                puts("");
             }
         public:
             virtual ~SupervisedModel(){

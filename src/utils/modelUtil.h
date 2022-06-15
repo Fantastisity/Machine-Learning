@@ -117,10 +117,10 @@ namespace MACHINE_LEARNING {
 
             std::tuple<DataFrame<elem>, DataFrame<elem>, DataFrame<elem>, DataFrame<elem>>
             train_test_split(DataFrame<elem> X, DataFrame<elem> Y, const float test_size = 0.25, 
-                                        const bool shuffle = 0, size_t random_state = 0);
+                             const bool shuffle = 0, size_t random_state = 0);
 
             template<typename T>
-            auto abs(const Matrix<T>& m) 
+            inline auto abs(const Matrix<T>& m) 
             -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
                 size_t r = m.rowNum(), c = m.colNum();
                 Matrix<T> mat(r, c);
@@ -131,7 +131,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename T>
-            auto sigmoid(const Matrix<T>& m) 
+            inline auto sigmoid(const Matrix<T>& m) 
             -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
                 size_t r = m.rowNum(), c = m.colNum();
                 Matrix<T> mat(r, c);
@@ -141,7 +141,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename T>
-            auto loge(const Matrix<T>& m) 
+            inline auto loge(const Matrix<T>& m) 
             -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
                 size_t r = m.rowNum(), c = m.colNum();
                 Matrix<T> mat(r, c);
@@ -152,7 +152,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename T>
-            auto sign(const Matrix<T>& m) 
+            inline auto sign(const Matrix<T>& m) 
             -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
                 size_t r = m.rowNum(), c = m.colNum();
                 Matrix<T> mat(r, c);
@@ -163,7 +163,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename T>
-            auto sum(const Matrix<T>& m)
+            inline auto sum(const Matrix<T>& m)
             -> typename std::enable_if<isNumerical<T>::val, T>::type {
                 T res = 0.0;
                 size_t r = m.rowNum(), c = m.colNum();
@@ -174,7 +174,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename T, typename R>
-            double RMSE(const Matrix<T>& ypred, const Matrix<R>& ytest) {
+            inline double RMSE(const Matrix<T>& ypred, const Matrix<R>& ytest) {
                 Matrix<double> tmp;
                 if constexpr (std::is_same<T, double>::value && std::is_same<R, double>::value) 
                     tmp = ypred - ytest;
@@ -186,7 +186,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename T, typename R>
-            double ACCURACY(const Matrix<T>& ypred, const Matrix<R>& ytest) {
+            inline double ACCURACY(const Matrix<T>& ypred, const Matrix<R>& ytest) {
                 size_t r = ytest.rowNum(), cnt = 0;
                 for (size_t i = 0; i < r; ++i) if (static_cast<double>(ypred(i, 0)) == static_cast<double>(ytest(i, 0))) ++cnt;
                 return 1.0 * cnt / r;
@@ -196,7 +196,7 @@ namespace MACHINE_LEARNING {
             k_fold(const size_t k, const size_t sample_size);
 
             template<typename M>
-            double cross_validation(SupervisedModel<M>& estimator, DataFrame<elem>& X, DataFrame<elem>& Y, 
+            inline double cross_validation(SupervisedModel<M>& estimator, DataFrame<elem>& X, DataFrame<elem>& Y, 
                                     const char* scoring = "RMSE", size_t k = 5) {
                 if (k > X.rowNum()) k = 1;
                 auto [indTrain, indTest, range, n] = k_fold(k, X.rowNum()); 
@@ -216,7 +216,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename M>
-            std::pair<std::vector<std::pair<char*, elem>>, double> 
+            inline std::pair<std::vector<std::pair<char*, elem>>, double> 
             grid_search(SupervisedModel<M>& estimator, Param param_grid, DataFrame<elem>& X, DataFrame<elem>& Y) {
                 std::vector<std::pair<char*, elem>> tmp;
                 std::vector<std::vector<std::pair<char*, elem>>> param_comb;

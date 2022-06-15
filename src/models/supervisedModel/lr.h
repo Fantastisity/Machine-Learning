@@ -12,29 +12,15 @@ namespace MACHINE_LEARNING {
 
             template<typename T, typename R>
             void fit(T&& x, R&& y, const uint8_t verbose = 0) {
-                if constexpr (UTIL_BASE::isDataframe<typename std::remove_reference<T>::type>::val) 
-                    this->x = x.values().template asType<double>();
-                else this->x = x;
+                init_matrices(std::forward<T>(x), std::forward<R>(y));
 
-                this->x.addCol(std::vector<double>(x.rowNum(), 1.0).data());
-
-                if constexpr (UTIL_BASE::isDataframe<typename std::remove_reference<R>::type>::val) 
-                    this->y = y.values().template asType<double>();
-                else this->y = y;
-
-                if (t == GDType::SAG) {
-                    if (!(seen = (bool*) calloc(x.rowNum(), 1))) {
-                        std::cerr << "error calloc\n"; exit(1);
-                    }
-                    this->gradient_table = Matrix<double>(this->x.rowNum(), this->x.colNum());
-                    this->gradient_sum = Matrix<double>(this->x.colNum(), 1);
-                }
-
-                if (verbose == 2) print_params(), puts("");
-                
                 this->w = Matrix<double>(this->x.colNum(), 1);
                 gradient_descent();
-                if (verbose) print_weights();
+
+                if (verbose) {
+                    if (verbose == 2) print_params();
+                    print_weights();
+                }
             }
 
             template<typename T>
@@ -42,7 +28,9 @@ namespace MACHINE_LEARNING {
                 Matrix<double> tmp{0};
                 if constexpr (UTIL_BASE::isDataframe<typename std::remove_reference<T>::type>::val) 
                     tmp = xtest.values().template asType<double>();
-                else tmp = xtest;
+                else if constexpr (UTIL_BASE::isMatrix<typename std::remove_reference<T>::type>::val) 
+                    tmp = xtest.template asType<double>();
+                else tmp = std::forward<T>(xtest);
                 
                 size_t nrow = tmp.rowNum();
                 tmp.addCol(std::vector<double>(nrow, 1.0).data());

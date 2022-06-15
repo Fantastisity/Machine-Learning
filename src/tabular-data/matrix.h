@@ -2,8 +2,8 @@
 
 namespace MACHINE_LEARNING {
     /* 
-        used for extracting the built-in type from template parameter, so that type conversion can be done implicitly;
-        for instance, it allows to pass an int as argument given T is double 
+        extracts built-in type from the template parameter, so that type conversion can be done implicitly;
+        for instance, it allows to pass an int as argument given T as double
     */
     template<typename R>
     using Deduce = typename std::common_type<R>::type;

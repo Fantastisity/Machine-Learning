@@ -26,8 +26,6 @@ static auto _ = []() {
 #include <fstream>
 #include <initializer_list>
 
-#define pretty_print(prefix, fill, width, suffix) (std::cout << prefix << std::setfill(fill) << std::setw(width) << suffix << '\n')
-
 namespace MACHINE_LEARNING {
     using ll = long long;
     namespace UTIL_BASE {
@@ -41,6 +39,17 @@ namespace MACHINE_LEARNING {
         struct isDataframe<U, Void<decltype(&U::addFeature)>> {
             const static bool val = 1;
         };
+
+        template<typename U, typename R = void>
+        struct isMatrix {
+            const static bool val = 0;
+        };
+
+        template<typename U>
+        struct isMatrix<U, Void<decltype(&U::trans)>> {
+            const static bool val = 1;
+        };
+
         template<typename T>
         struct isNumerical {
             const static bool val = 1;
