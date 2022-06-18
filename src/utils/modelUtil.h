@@ -1,7 +1,3 @@
-// #ifndef UTIL_BASE_INCLUDED
-// #define UTIL_BASE_INCLUDED
-// #include "utilityBase.h"
-// #endif
 #ifndef MODEL_INCLUDED
 #define MODEL_INCLUDED
 #include "../models/model.h"
@@ -267,7 +263,7 @@ namespace MACHINE_LEARNING {
                         return tmp;
                     }
                     
-                    node* partition(size_t* ind, size_t nrow) {
+                    node* partition(size_t ind[], size_t nrow) {
                         size_t ncol = mat.colNum();
                         node* root = init_node(ncol);
                         // Find centroid
@@ -300,18 +296,24 @@ namespace MACHINE_LEARNING {
                         }
 
                         // Project data on to (first_node - second_node)
-                        T diff[ncol], Z[nrow], mid = &Z[nrow >> 1]; memset(diff, 0, sizeof(diff));
+                        T diff[ncol], mid; memset(diff, 0, sizeof(diff));
+                        std::vector<std::pair<T, size_t>> Z(nrow, std::make_pair(0, 0));
                         for (size_t i = 0; i < ncol; ++i) diff[i] = mat(first_node_ind, i) - mat(second_node_ind, i);
                         for (size_t i = 0; i < nrow; ++i) {
-                            Z[i] = 0;
                             for (size_t j = 0; j < ncol; ++i) {
-                                Z[i] += diff[j] * mat(ind[i], j);
+                                Z[i].first += diff[j] * mat(ind[i], j);
                             }
                         }
-                        sort(Z, Z + nrow);   
 
-                        root->left = partition();
-                        root->right = partition();
+                        // Construct left and right child indices
+                        sort(Z.begin(), Z.end());
+                        size_t mid = nrow >> 1;
+                        size_t left_child_indices[mid], right_child_indices[nrow - mid];
+                        for (size_t i = 0; i < mid; ++i) 
+                            left_child_indices[i] = Z[i].second, right_child_indices[i + mid] = Z[i + mid].second;
+
+                        root->left = partition(left_child_indices, mid);
+                        root->right = partition(right_child_indices, nrow - mid);
 
                         return root;
                     }
