@@ -58,19 +58,19 @@ int main() {
     #ifdef TEST_OLS
         auto [xtrain, xtest, ytrain, ytest] = train_test_split(X, Y, 0.25, 1, 1);
         LinearRegression ols;
-        Param param_grid {
-            {"eta", {1e-6, 1e-7, 1e-8}}, 
-            {"iteration", {200, 500}},
-            {"gd_type", {static_cast<double>(GDType::SAG), static_cast<double>(GDType::MINI_BATCH)}},
-            {"regularizor", {static_cast<double>(Regularizor::L1), static_cast<double>(Regularizor::L2)}},
-            {"alpha", {0.1, 0.3}},
-            {"lambda", {0.1, 0.3}}
-        };
+        // Param param_grid {
+        //     {"eta", {1e-6, 1e-7, 1e-8}}, 
+        //     {"iteration", {200, 500}},
+        //     {"gd_type", {static_cast<double>(GDType::SAG), static_cast<double>(GDType::MINI_BATCH)}},
+        //     {"regularizor", {static_cast<double>(Regularizor::L1), static_cast<double>(Regularizor::L2)}},
+        //     {"alpha", {0.1, 0.3}},
+        //     {"lambda", {0.1, 0.3}}
+        // };
 
-        auto [best_param, best_err] = grid_search(ols, param_grid, xtrain, ytrain);
-        ols.set_params(best_param);
+        // auto [best_param, best_err] = grid_search(ols, param_grid, xtrain, ytrain);
+        // ols.set_params(best_param);
         ols.fit(xtrain, ytrain, 2);
-        logger("validation set RMSE:", RMSE(ols.predict(xtest), ytest.values()));
+        logger("validation set RMSE:", METRICS::RMSE(ols.predict(xtest), ytest.values()));
         logger("CV RMSE:", cross_validation(ols, xtrain, ytrain));
 
     #elif defined TEST_LR
@@ -82,7 +82,7 @@ int main() {
         clf.set_gd_type(GDType::SAG);
         clf.set_iteration(1000);
         clf.fit(xtrain, ytrain, 2);
-        logger("Accuracy:", ACCURACY(clf.predict(xtest), ytest.values()));
+        logger("Accuracy:", METRICS::ACCURACY(clf.predict(xtest), ytest.values()));
         logger("CV Accuracy:", cross_validation(clf, xtrain, ytrain, "ACC"));
     #endif
     return 0;

@@ -30,7 +30,7 @@ namespace MACHINE_LEARNING {
 
                 this->x.addCol(std::vector<double>(x.rowNum(), 1.0).data());
 
-                 if constexpr (UTIL_BASE::isDataframe<typename std::remove_reference<R>::type>::val) 
+                if constexpr (UTIL_BASE::isDataframe<typename std::remove_reference<R>::type>::val) 
                     this->y = y.values().template asType<double>();
                 else if constexpr (UTIL_BASE::isMatrix<typename std::remove_reference<R>::type>::val)
                     this->y = y.template asType<double>();
@@ -140,42 +140,42 @@ namespace MACHINE_LEARNING {
                 printf("**********************************************************\n");
                 switch (t) { 
                     case GDType::BATCH: 
-                        printf("gradient descent type:\t\t\t\t\t\t\tBGD\n");
+                        printf("gradient descent type:\t\t\t\t\t\t\t\t BGD\n");
                         break;
                     case GDType::SAG:
-                        printf("gradient descent type:\t\t\t\t\t\t\tSAG\n");
+                        printf("gradient descent type:\t\t\t\t\t\t\t\t SAG\n");
                         break;
                     case GDType::MINI_BATCH:
-                        printf("gradient descent type:\t\t\t\t\t\t  m-BGD\n");
-                        printf("batch size:\t\t\t\t\t\t\t\t\t\t %lld\n", batch_size);
+                        printf("gradient descent type:\t\t\t\t\t\t\t   m-BGD\n");
+                        printf("batch size:\t\t\t\t\t\t\t\t\t\t\t  %lld\n", batch_size);
                         break;
                 }
                 if (r != Regularizor::None) {
                     switch (r) {
                         case Regularizor::L1:
-                            printf("regularizor:\t\t\t\t\t\t\t\t  Lasso\n");
+                            printf("regularizor:\t\t\t\t\t\t\t\t\t   Lasso\n");
                             break;
                         case Regularizor::L2:
-                            printf("regularizor:\t\t\t\t\t\t\t\t  Ridge\n");
+                            printf("regularizor:\t\t\t\t\t\t\t\t\t   Ridge\n");
                             break;
                         case Regularizor::ENet:
-                            printf("regularizor:\t\t\t\t\t\t\tElastic Net\n");
-                            printf("alpha:\t\t\t\t\t\t\t\t\t\t\t%.1f\n", alpha);
+                            printf("regularizor:\t\t\t\t\t\t\t\t Elastic Net\n");
+                            printf("alpha:\t\t\t\t\t\t\t\t\t\t\t\t %.1f\n", alpha);
                             break;
                     };
-                    printf("lambda:\t\t\t\t\t\t\t\t\t\t\t%.1f\n", lamb);
+                    printf("lambda:\t\t\t\t\t\t\t\t\t\t\t\t %.1f\n", lamb);
                 }
                 
-                printf("eta:\t\t\t\t\t\t\t\t\t\t  %.0e\n", eta);
-                printf("epsilon:\t\t\t\t\t\t\t\t\t   %.2f\n", eps);
-                printf("iterations:\t\t\t\t\t\t\t\t\t   %lld\n\n", iter);
+                printf("eta:\t\t\t\t\t\t\t\t\t\t\t   %.0e\n", eta);
+                printf("epsilon:\t\t\t\t\t\t\t\t\t\t    %.2f\n", eps);
+                printf("iterations:\t\t\t\t\t\t\t\t\t\t\t%lld\n\n", iter);
             }
 
             void print_weights() {
                 printf("**********************************************************\n");
                 printf("\t\t\t\t\t  Final Weights\n");
                 printf("**********************************************************\n");
-                for (size_t i = 0, r = w.rowNum(); i < r; ++i) printf("%lld\t\t\t\t\t\t\t\t\t\t %.8f\n", i, w(i, 0));
+                for (size_t i = 0, r = w.rowNum(); i < r; ++i) printf("%lld\t\t\t\t\t\t\t\t\t\t\t   %+9.6f\n", i, w(i, 0));
                 puts("");
             }
         public:
@@ -205,7 +205,7 @@ namespace MACHINE_LEARNING {
                 this->batch_size = batch_size;
             }
 
-            void set_params(std::vector<std::pair<char*, elem>>& grid) {
+            void set_params(std::vector<std::pair<char const *, elem>>& grid) {
                 for (auto& i : grid) {
                     if      (!strcmp(i.first, "eta")) this->eta = i.second;
                     else if (!strcmp(i.first, "epsilon")) this->eps = i.second;

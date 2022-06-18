@@ -73,7 +73,8 @@
         "future": "cpp",
         "__tree": "cpp",
         "map": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "__memory": "cpp"
     },
     "workbench.colorCustomizations": {
         "activityBar.activeBackground": "#51585b",

@@ -34,7 +34,7 @@ namespace MACHINE_LEARNING {
                 
                 size_t nrow = tmp.rowNum();
                 tmp.addCol(std::vector<double>(nrow, 1.0).data());
-                tmp = UTIL_BASE::MODEL_UTIL::sigmoid(tmp * this->w);
+                tmp = UTIL_BASE::MODEL_UTIL::METRICS::sigmoid(tmp * this->w);
                 for (size_t i = 0; i < nrow; ++i) tmp(i, 0) = tmp(i, 0) < 0.5 ? 0 : 1;
                 return tmp;
             }
