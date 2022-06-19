@@ -17,14 +17,12 @@ namespace MACHINE_LEARNING {
                 if (this->t == GDType::None) 
                     this->w = (this->x.trans() * this->x).inverse() * this->x.trans() * this->y;
                 else {
+                    if (verbose == 2) print_params();
                     this->w = Matrix<double>(this->x.colNum(), 1); 
                     gradient_descent();
                 }
 
-                if (verbose) {
-                    if (verbose == 2) print_params();
-                    print_weights();
-                }
+                if (verbose) print_weights();
             }
 
             template<typename T>

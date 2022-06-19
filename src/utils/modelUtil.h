@@ -213,32 +213,41 @@ namespace MACHINE_LEARNING {
                 BallTree(const Matrix<T>& mat, const size_t leaf_size, const char* metric = "euclid", size_t p = 2) 
                 : mat(mat), leaf_size(leaf_size), p(p) {
                     strcpy(this->metric, metric);
-                    if (!(centroid = (T*) calloc(mat.colNum(), sizeof(T)))) {
-                        std::cerr << "error calloc\n"; exit(1);
-                    }
+                    size_t nrow = mat.rowNum(), ind[nrow];
+                    for (size_t i = 0; i < nrow; ++i) ind[i] = i;
+                    root = partition(ind, nrow);
                 }
                 BallTree(const Matrix<T>&& mat, const size_t leaf_size, const char* metric = "euclid", size_t p = 2) 
                 : mat(mat), leaf_size(leaf_size), p(p) {
                     strcpy(this->metric, metric);
-                    if (!(centroid = (T*) calloc(mat.colNum(), sizeof(T)))) {
-                        std::cerr << "error calloc\n"; exit(1);
-                    }
+                    size_t nrow = mat.rowNum(), ind[nrow];
+                    for (size_t i = 0; i < nrow; ++i) ind[i] = i;
+                    root = partition(ind, nrow);
                 }
                 BallTree(const BallTree&) = delete;
                 BallTree(BallTree&&) = delete;
                 BallTree& operator= (const BallTree&) = delete;
                 BallTree& operator= (BallTree&&) = delete;
                 ~BallTree() {
-                    free(centroid);
+                    if (root) {
+                        free(root);
+                        root = nullptr;
+                    }
                 }
+
+                void query(T* point, size_t n_neighbors) {
+                    query(root, point, n_neighbors);
+                }
+
                 private:
                     Matrix<T> mat;
                     size_t leaf_size, p;
                     char metric[7];
                     struct node {
                         node* left_child, * right_child;
-                        T* centroid;
+                        T* centroid, * indices;
                         double radius;
+                        bool is_leaf;
                         ~node() {
                             if (left_child) {
                                 delete left_child;
@@ -248,41 +257,57 @@ namespace MACHINE_LEARNING {
                                 delete right_child; 
                                 right_child = nullptr;
                             }
+                            if (indices) {
+                                delete[] indices;
+                                indices = nullptr;
+                            }
                             if (centroid) {
                                 delete[] centroid;
                                 centroid = nullptr;
                             }
                         }
                     };
-
-                    node* init_node(size_t ncol) {
+                    node* root;
+                    node* init_node(size_t ncol, size_t nrow) {
                         node* tmp = new node;
                         tmp->left_child = tmp->right_child = nullptr;
+                        tmp->indices = new T[nrow];
                         tmp->centroid = new T[ncol]{};
-                        tmp->radius = 0;
+                        tmp->radius = 0, tmp->is_leaf = 0;
                         return tmp;
                     }
                     
+                    // ref. https://www.cs.cornell.edu/courses/cs4780/2018fa/lectures/lecturenote16.html
                     node* partition(size_t ind[], size_t nrow) {
                         size_t ncol = mat.colNum();
-                        node* root = init_node(ncol);
+                        node* root = init_node(ncol, nrow);
                         // Find centroid
                         for (size_t i = 0; i < nrow; ++i) 
                             for (size_t j = 0; j < ncol; ++j) {
                                 root->centroid[j] += root->centroid[j];
                                 if (i == nrow - 1) root->centroid[j] /= nrow;
                             }
+                        // Single node case
+                        if (nrow == 1) { 
+                            root->radius = 0, root->is_leaf = 1, root->indices[0] = ind[0];
+                            return root;
+                        }
+                        // Store indices for current subtree
+                        std::copy(ind, ind + nrow, root->indices);
                         // Locate the first node that is the furtherest from centroid
                         size_t first_node_ind;
                         for (size_t i = 0; i < nrow; ++i) {
                             double dist;
-                            if (!strcmp(metric, "euclid")) dist = METRICS::euclidean(mat(ind[i], 0), centroid, ncol);
-                            else if (!strcmp(metric, "manhat")) dist = METRICS::manhattan(mat(ind[i], 0), centroid, ncol);
-                            else dist = METRICS::minkowski(mat(ind[i], 0), centroid, ncol, p);
+                            if (!strcmp(metric, "euclid")) dist = METRICS::euclidean(mat(ind[i], 0), root->centroid, ncol);
+                            else if (!strcmp(metric, "manhat")) dist = METRICS::manhattan(mat(ind[i], 0), root->centroid, ncol);
+                            else dist = METRICS::minkowski(mat(ind[i], 0), root->centroid, ncol, p);
 
                             if (dist > root->radius) root->radius = dist, first_node_ind = ind[i];
                         }
-
+                        if (nrow <= leaf_size) { // Leaf nodes; no further splits are needed
+                            root->is_leaf = 1;
+                            return root;
+                        }
                         // Locate the second node that is the furtherest from first node
                         size_t second_node_ind;
                         double max_dist = 0;
@@ -296,7 +321,7 @@ namespace MACHINE_LEARNING {
                         }
 
                         // Project data on to (first_node - second_node)
-                        T diff[ncol], mid; memset(diff, 0, sizeof(diff));
+                        T diff[ncol]; memset(diff, 0, sizeof(diff));
                         std::vector<std::pair<T, size_t>> Z(nrow, std::make_pair(0, 0));
                         for (size_t i = 0; i < ncol; ++i) diff[i] = mat(first_node_ind, i) - mat(second_node_ind, i);
                         for (size_t i = 0; i < nrow; ++i) {
@@ -316,6 +341,13 @@ namespace MACHINE_LEARNING {
                         root->right = partition(right_child_indices, nrow - mid);
 
                         return root;
+                    }
+
+                    // ref. https://www.cs.cmu.edu/~agray/clsfnn.pdf
+                    void query(node* root, const T const * point, const size_t n_neighbors, std::vector<size_t>& point_set) {
+                        double dist_min = METRICS::manhattan(point, root->centroid, mat.colNum());
+
+                        //if (dist_min > point_set[n_neighbors])
                     }
             };
 

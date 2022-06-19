@@ -218,7 +218,7 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename R>
-            Matrix<R> asType() const {
+            Matrix<R> asType() const { // Type conversion
                 if constexpr (std::is_same<T, R>::value) return *this;
                 Matrix<R> m(row, col);
                 UTIL_BASE::MATRIX_UTIL::conv_type(m.mat, mat, row * col);
@@ -233,8 +233,8 @@ namespace MACHINE_LEARNING {
 
             Matrix inverse() {
                 assert(row == col);
-                Matrix m = *this, idm = eye(row);
-                assert(UTIL_BASE::MATRIX_UTIL::gauss_jordan_elimination(m.mat, idm.mat, row, col, col, 1));
+                Matrix idm = eye(row);
+                assert(UTIL_BASE::MATRIX_UTIL::gauss_jordan_elimination(Matrix(*this).mat, idm.mat, row, col, col, 1));
                 return idm;
             }
 
