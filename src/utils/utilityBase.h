@@ -6,6 +6,7 @@
 #include <immintrin.h>
 #include <utility>
 #include <unordered_map>
+#include <queue>
 #include <cmath>
 #include <tuple>
 #include <type_traits>

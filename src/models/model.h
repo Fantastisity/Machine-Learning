@@ -168,7 +168,7 @@ namespace MACHINE_LEARNING {
                 
                 printf("eta:\t\t\t\t\t\t\t\t\t\t\t   %.0e\n", eta);
                 printf("epsilon:\t\t\t\t\t\t\t\t\t\t    %.2f\n", eps);
-                printf("iterations:\t\t\t\t\t\t\t\t\t\t\t%lld\n\n", iter);
+                printf("iterations:\t\t\t\t\t\t\t\t\t\t\t %lld\n\n", iter);
             }
 
             void print_weights() {
