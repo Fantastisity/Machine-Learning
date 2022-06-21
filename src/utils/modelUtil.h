@@ -1,6 +1,6 @@
-#ifndef MODEL_INCLUDED
-#define MODEL_INCLUDED
-#include "../models/model.h"
+#ifndef DATA_FRAME_INCLUDED
+#define DATA_FRAME_INCLUDED
+#include "../tabular-data/dataFrame.h"
 #endif
 
 namespace MACHINE_LEARNING {

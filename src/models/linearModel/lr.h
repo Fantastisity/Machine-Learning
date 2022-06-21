@@ -1,10 +1,10 @@
-#ifndef MODEL_UTIL_INCLUDED
-#define MODEL_UTIL_INCLUDED
-#include "../../utils/modelUtil.h"
+#ifndef LINEARMODEL_INCLUDED
+#define LINEARMODEL_INCLUDED
+#include "linearModel.h"
 #endif
 
 namespace MACHINE_LEARNING {
-    class LogisticRegression : public SupervisedModel<LogisticRegression> {
+    class LogisticRegression : public LinearModel<LogisticRegression> {
             double loss();
             Matrix<double> gradient(const Matrix<double>& X, const Matrix<double>& Y);
         public:

@@ -9,7 +9,7 @@
 #ifdef TEST_OLS
 #ifndef OLS_INCLUDED
 #define OLS_INCLUDED
-#include "src/models/supervisedModel/ols.h"
+#include "src/models/linearModel/ols.h"
 #endif
 #endif
 
@@ -61,7 +61,7 @@ int main() {
         Param param_grid {
             {"eta", {1e-6, 1e-7, 1e-8}}, 
             {"iteration", {200, 500}},
-            {"gd_type", {static_cast<double>(GDType::SAG), static_cast<double>(GDType::MINI_BATCH)}},
+            {"gd_type", {static_cast<double>(GDType::None), static_cast<double>(GDType::BATCH)}},
             {"regularizor", {static_cast<double>(Regularizor::L1), static_cast<double>(Regularizor::L2)}},
             {"alpha", {0.1, 0.3}},
             {"lambda", {0.1, 0.3}}

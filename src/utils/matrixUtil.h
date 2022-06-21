@@ -308,6 +308,11 @@ namespace MACHINE_LEARNING {
             return dval;
         }
 
+        const char* c_str() {
+            assert(t == vtype::STR);
+            return sval;
+        }
+
         elem& operator= (const elem& e) {
             switch (e.t) {
                 case vtype::DBL:

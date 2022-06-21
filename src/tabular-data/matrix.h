@@ -1,4 +1,7 @@
+#ifndef MATRIXUTIL_INCLUDED
+#define MATRIXUTIL_INCLUDED
 #include "../utils/matrixUtil.h"
+#endif
 
 namespace MACHINE_LEARNING {
     /* 

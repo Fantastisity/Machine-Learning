@@ -1,7 +1,6 @@
-#include <vector>
-#ifndef DATA_FRAME_INCLUDED
-#define DATA_FRAME_INCLUDED
-#include "../tabular-data/dataFrame.h"
+#ifndef MODELUTIL_INCLUDED
+#define MODELUTIL_INCLUDED
+#include "../../utils/modelUtil.h"
 #endif
 // #define WRITE_TO_FILE
 
@@ -10,13 +9,13 @@ enum class Regularizor { None, L1, L2, ENet };
 
 namespace MACHINE_LEARNING {
     template<typename M>
-    class SupervisedModel {
+    class LinearModel {
         protected:
             std::ofstream output;
             bool* seen = nullptr;
             Matrix<double> x{0}, y{0}, w{0}, gradient_table{0}, gradient_sum{0};
             double eta = 1e-9, lamb, alpha, eps = 1e-2;
-            ll iter = 1000, batch_size;
+            size_t iter = 1000, batch_size;
             Regularizor r = Regularizor::None;
             GDType t = GDType::None;
 
@@ -147,7 +146,7 @@ namespace MACHINE_LEARNING {
                         break;
                     case GDType::MINI_BATCH:
                         printf("gradient descent type:\t\t\t\t\t\t\t   m-BGD\n");
-                        printf("batch size:\t\t\t\t\t\t\t\t\t\t\t  %lld\n", batch_size);
+                        printf("batch size:\t\t\t\t\t\t\t\t\t\t\t  %u\n", batch_size);
                         break;
                 }
                 if (r != Regularizor::None) {
@@ -168,7 +167,7 @@ namespace MACHINE_LEARNING {
                 
                 printf("eta:\t\t\t\t\t\t\t\t\t\t\t   %.0e\n", eta);
                 printf("epsilon:\t\t\t\t\t\t\t\t\t\t    %.2f\n", eps);
-                printf("iterations:\t\t\t\t\t\t\t\t\t\t\t %lld\n\n", iter);
+                printf("iterations:\t\t\t\t\t\t\t\t\t\t\t %u\n\n", iter);
             }
 
             void print_weights() {
@@ -179,7 +178,7 @@ namespace MACHINE_LEARNING {
                 puts("");
             }
         public:
-            virtual ~SupervisedModel(){
+            virtual ~LinearModel(){
                 if (seen) free(seen), seen = nullptr;
             }
             void set_eta(const double eta) {
