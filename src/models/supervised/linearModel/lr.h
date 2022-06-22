@@ -12,7 +12,7 @@ namespace MACHINE_LEARNING {
 
             template<typename T, typename R>
             void fit(T&& x, R&& y, const uint8_t verbose = 0) {
-                init_matrices(std::forward<T>(x), std::forward<R>(y));
+                init(std::forward<T>(x), std::forward<R>(y));
 
                 this->w = Matrix<double>(this->x.colNum(), 1);
                 gradient_descent();

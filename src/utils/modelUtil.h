@@ -111,25 +111,25 @@ namespace MACHINE_LEARNING {
 
             namespace METRICS {
                 template<typename T, typename R>
-                inline auto minkowski(const T* const pointA, const T* const pointB, size_t n, size_t p = 1) 
+                inline auto minkowski(const T* const pointA, const R* const pointB, size_t n, size_t p = 1) 
                 -> typename std::enable_if<isNumerical<T>::val && isNumerical<R>::val, double>::type {
                     assert(p);
                     double dist = 0;
-                    for (--n; n >= 0; --n) 
+                    for (size_t i = 0; i < n; ++i) 
                         dist += p > 1 ? 
-                                std::pow(pointA[n] > pointB[n] ? pointA[n] - pointB[n] : pointB[n] - pointA[n], p) : 
-                                (pointA[n] > pointB[n] ? pointA[n] - pointB[n] : pointB[n] - pointA[n]);
+                                std::pow(pointA[i] > pointB[i] ? pointA[i] - pointB[i] : pointB[i] - pointA[i], p) : 
+                                (pointA[i] > pointB[i] ? pointA[i] - pointB[i] : pointB[i] - pointA[i]);
                     return std::pow(dist, 1 / p);
                 }
 
                 template<typename T, typename R>
-                inline auto euclidean(const T* const pointA, const T* const pointB, size_t n) 
+                inline auto euclidean(const T* const pointA, const R* const pointB, size_t n) 
                 -> typename std::enable_if<isNumerical<T>::val && isNumerical<R>::val, double>::type {
                     return minkowski(pointA, pointB, n, 2);
                 }
 
                 template<typename T, typename R>
-                inline auto manhattan(const T* const pointA, const T* const pointB, size_t n) 
+                inline auto manhattan(const T* const pointA, const R* const pointB, size_t n) 
                 -> typename std::enable_if<isNumerical<T>::val && isNumerical<R>::val, double>::type {
                     return minkowski(pointA, pointB, n);
                 }

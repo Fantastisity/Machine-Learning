@@ -1,6 +1,6 @@
 #ifndef MODELUTIL_INCLUDED
 #define MODELUTIL_INCLUDED
-#include "../../utils/modelUtil.h"
+#include "../../../utils/modelUtil.h"
 #endif
 // #define WRITE_TO_FILE
 

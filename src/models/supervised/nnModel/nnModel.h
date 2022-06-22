@@ -1,8 +1,7 @@
 #ifndef MODELUTIL_INCLUDED
 #define MODELUTIL_INCLUDED
-#include "../../utils/modelUtil.h"
+#include "../../../utils/modelUtil.h"
 #endif
-// #define WRITE_TO_FILE
 
 enum class Metric {EUCLIDEAN, MANHATTAN, MINKOWSKI};
 enum class NNAlgo {BALLTREE};
@@ -14,8 +13,24 @@ namespace MACHINE_LEARNING {
             std::ofstream output;
             size_t n_neighbors = 5, leaf_size = 20;
             uint32_t p = 2;
-            Metric m;
-            NNAlgo algo;
+            Metric m = Metric::EUCLIDEAN;
+            NNAlgo algo = NNAlgo::BALLTREE;
+            Matrix<double> x{0}, y{0};
+
+            template<typename T, typename R>
+            void init(T&& x, R&& y) {
+                if constexpr (UTIL_BASE::isDataframe<typename std::remove_reference<T>::type>::val) 
+                    this->x = x.values().template asType<double>();
+                else if constexpr (UTIL_BASE::isMatrix<typename std::remove_reference<T>::type>::val) 
+                    this->x = x.template asType<double>();
+                else this->x = std::forward<T>(x);
+
+                if constexpr (UTIL_BASE::isDataframe<typename std::remove_reference<R>::type>::val) 
+                    this->y = y.values().template asType<double>();
+                else if constexpr (UTIL_BASE::isMatrix<typename std::remove_reference<R>::type>::val)
+                    this->y = y.template asType<double>();
+                else this->y = std::forward<T>(y);
+            }
 
             void print_params() {
                 printf("**********************************************************\n");

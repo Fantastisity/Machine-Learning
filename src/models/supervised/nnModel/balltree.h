@@ -1,6 +1,7 @@
 namespace MACHINE_LEARNING {
     template<typename T>
     struct BallTree {
+        BallTree() : mat(0), leaf_size(-1), m(Metric::EUCLIDEAN), p(2), root(nullptr) {}
         BallTree(const Matrix<T>& mat, const size_t leaf_size, const Metric m = Metric::EUCLIDEAN, const size_t p = 2) 
         : mat(mat), leaf_size(leaf_size), m(m), p(p) {
             size_t nrow = mat.rowNum(), ind[nrow];
@@ -13,10 +14,26 @@ namespace MACHINE_LEARNING {
             for (size_t i = 0; i < nrow; ++i) ind[i] = i;
             root = partition(ind, nrow);
         }
-        BallTree(const BallTree&) = delete;
-        BallTree(BallTree&&) = delete;
-        BallTree& operator= (const BallTree&) = delete;
-        BallTree& operator= (BallTree&&) = delete;
+        BallTree(const BallTree& tree) : mat(tree.mat), leaf_size(tree.leaf_size), m(tree.m), p(tree.p), root(tree.root) {}
+        BallTree(BallTree&& tree) : mat(std::move(tree.mat)), leaf_size(tree.leaf_size), m(tree.m), p(tree.p), root(tree.root) {
+            tree.root = nullptr;
+        }
+        BallTree& operator= (const BallTree& tree) {
+            mat = tree.mat;
+            leaf_size = tree.leaf_size;
+            m = tree.m;
+            p = tree.p;
+            root = tree.root;
+            return *this;
+        }
+        BallTree& operator= (BallTree&& tree) {
+            mat = std::move(tree.mat);
+            leaf_size = tree.leaf_size;
+            m = tree.m;
+            p = tree.p;
+            root = tree.root, tree.root = nullptr;
+            return *this;
+        }
         ~BallTree() {
             if (root) {
                 free(root);
@@ -61,7 +78,7 @@ namespace MACHINE_LEARNING {
                 }
             };
             node* root;
-            node* init_node(size_t ncol, size_t nrow) {
+            node* init_node(size_t nrow, size_t ncol) {
                 node* tmp = new node;
                 tmp->left_child = tmp->right_child = nullptr;
                 tmp->indices = new T[tmp->size = nrow];
@@ -72,12 +89,13 @@ namespace MACHINE_LEARNING {
             
             // Ref. https://www.cs.cornell.edu/courses/cs4780/2018fa/lectures/lecturenote16.html
             node* partition(size_t ind[], size_t nrow) {
+                logger(nrow);
                 size_t ncol = mat.colNum();
-                node* root = init_node(ncol, nrow);
+                node* root = init_node(nrow, ncol);
                 // Find centroid
                 for (size_t i = 0; i < nrow; ++i) 
                     for (size_t j = 0; j < ncol; ++j) {
-                        root->centroid[j] += root->centroid[j];
+                        root->centroid[j] += mat(i, j);
                         if (i == nrow - 1) root->centroid[j] /= nrow;
                     }
                 // Single node case
@@ -93,13 +111,13 @@ namespace MACHINE_LEARNING {
                     double dist;
                     switch (m) { 
                         case Metric::EUCLIDEAN: 
-                            dist = UTIL_BASE::MODEL_UTIL::METRICS::euclidean(mat(ind[i], 0), root->centroid, ncol);
+                            dist = UTIL_BASE::MODEL_UTIL::METRICS::euclidean(&mat(ind[i], 0), root->centroid, ncol);
                             break;
                         case Metric::MANHATTAN:
-                            dist = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(mat(ind[i], 0), root->centroid, ncol);
+                            dist = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(&mat(ind[i], 0), root->centroid, ncol);
                             break;
                         case Metric::MINKOWSKI:
-                            dist = UTIL_BASE::MODEL_UTIL::METRICS::minkowski(mat(ind[i], 0), root->centroid, ncol, p);
+                            dist = UTIL_BASE::MODEL_UTIL::METRICS::minkowski(&mat(ind[i], 0), root->centroid, ncol, p);
                             break;
                     }
                     if (dist > root->radius) root->radius = dist, first_node_ind = ind[i];
@@ -115,13 +133,13 @@ namespace MACHINE_LEARNING {
                     double dist;
                     switch (m) { 
                         case Metric::EUCLIDEAN: 
-                            dist = UTIL_BASE::MODEL_UTIL::METRICS::euclidean(mat(ind[i], 0), mat(first_node_ind, 0), ncol);
+                            dist = UTIL_BASE::MODEL_UTIL::METRICS::euclidean(&mat(ind[i], 0), &mat(first_node_ind, 0), ncol);
                             break;
                         case Metric::MANHATTAN:
-                            dist = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(mat(ind[i], 0), mat(first_node_ind, 0), ncol);
+                            dist = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(&mat(ind[i], 0), &mat(first_node_ind, 0), ncol);
                             break;
                         case Metric::MINKOWSKI:
-                            dist = UTIL_BASE::MODEL_UTIL::METRICS::minkowski(mat(ind[i], 0), mat(first_node_ind, 0), ncol, p);
+                            dist = UTIL_BASE::MODEL_UTIL::METRICS::minkowski(&mat(ind[i], 0), &mat(first_node_ind, 0), ncol, p);
                             break;
                     }
                     if (dist > max_dist) max_dist = dist, second_node_ind = ind[i];
@@ -132,7 +150,7 @@ namespace MACHINE_LEARNING {
                 std::vector<std::pair<T, size_t>> Z(nrow, std::make_pair(0, 0));
                 for (size_t i = 0; i < ncol; ++i) diff[i] = mat(first_node_ind, i) - mat(second_node_ind, i);
                 for (size_t i = 0; i < nrow; ++i) {
-                    for (size_t j = 0; j < ncol; ++i) {
+                    for (size_t j = 0; j < ncol; ++j) {
                         Z[i].first += diff[j] * mat(ind[i], j);
                     }
                 }
@@ -144,8 +162,8 @@ namespace MACHINE_LEARNING {
                 for (size_t i = 0; i < mid; ++i) 
                     left_child_indices[i] = Z[i].second, right_child_indices[i + mid] = Z[i + mid].second;
 
-                root->left = partition(left_child_indices, mid);
-                root->right = partition(right_child_indices, nrow - mid);
+                root->left_child = partition(left_child_indices, mid);
+                root->right_child = partition(right_child_indices, nrow - mid);
 
                 return root;
             }
@@ -157,22 +175,22 @@ namespace MACHINE_LEARNING {
                 if (!point_set.empty() && dist_min >= point_set.top().first) return;
                 if (root->is_leaf) 
                     for (size_t i = 0, n = root->size; i < n; ++i) {
-                        double cur_dist = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(point, mat(root->indices[i], 0), mat.colNum());
+                        double cur_dist = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(point, &mat(root->indices[i], 0), mat.colNum());
                         if (point_set.top().first > cur_dist) {
                             if (point_set.size() == n_neighbors) point_set.pop();
                             point_set.push(std::make_pair(cur_dist, root->indices[i]));
                         }
                     }
                 else {
-                    double left_dist  = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(point, root->left->centroid, mat.colNum()),
-                           right_dist = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(point, root->right->centroid, mat.colNum());
+                    double left_dist  = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(point, root->left_child->centroid, mat.colNum()),
+                           right_dist = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(point, root->right_child->centroid, mat.colNum());
                     // Child closest to point -> Child furthest to point
                     if (left_dist < right_dist) {
-                        query(root->left, point, n_neighbors, point_set, left_dist);
-                        query(root->right, point, n_neighbors, point_set, right_dist);
+                        query(root->left_child, point, n_neighbors, point_set, left_dist);
+                        query(root->right_child, point, n_neighbors, point_set, right_dist);
                     } else {
-                        query(root->right, point, n_neighbors, point_set, right_dist);
-                        query(root->left, point, n_neighbors, point_set, left_dist);
+                        query(root->right_child, point, n_neighbors, point_set, right_dist);
+                        query(root->left_child, point, n_neighbors, point_set, left_dist);
                     }
                 }
             }
