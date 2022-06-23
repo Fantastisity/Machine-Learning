@@ -1,9 +1,10 @@
 //#define TEST_OLS
 //#define TEST_LR
-#define TEST_KNNREGRESSOR
+//#define TEST_KNNREGRESSOR
+#define TEST_KNNCLASSIFIER
 
-#define REGRESSION
-//#define CLASSIFICATION
+//#define REGRESSION
+#define CLASSIFICATION
 
 #ifndef PARSER_INCLUDED
 #define PARSER_INCLUDED
@@ -31,6 +32,13 @@
 #endif
 #endif
 
+#ifdef TEST_KNNCLASSIFIER
+#ifndef KNNCLASSIFIER_INCLUDED
+#define KNNCLASSIFIER_INCLUDED
+#include "src/models/supervised/nnModel/knnClassifier.h"
+#endif
+#endif
+
 int main() {
     using namespace MACHINE_LEARNING::UTIL_BASE::MODEL_UTIL;
     using
@@ -41,6 +49,8 @@ int main() {
     MACHINE_LEARNING::LogisticRegression,
     #elif defined TEST_KNNREGRESSOR
     MACHINE_LEARNING::KNNRegressor,
+    #elif defined TEST_KNNCLASSIFIER
+    MACHINE_LEARNING::KNNClassifer,
     #endif
     MACHINE_LEARNING::DataFrame,
     MACHINE_LEARNING::elem,
@@ -99,13 +109,18 @@ int main() {
         clf.set_gd_type(GDType::SAG);
         clf.set_iteration(1000);
         clf.fit(xtrain, ytrain, 2);
-        logger("Accuracy:", METRICS::ACCURACY(clf.predict(xtest), ytest.values()));
+        logger("validation set Accuracy:", METRICS::ACCURACY(clf.predict(xtest), ytest.values()));
         logger("CV Accuracy:", cross_validation(clf, xtrain, ytrain, "ACC"));
     
     #elif defined TEST_KNNREGRESSOR
         KNNRegressor knn;
         knn.fit(xtrain, ytrain, 2);
-        // logger("Accuracy:", METRICS::RMSE(knn.predict(xtest), ytest.values()));
+        logger("validation set RMSE:", METRICS::RMSE(knn.predict(xtest), ytest.values()));
+    
+    #elif defined TEST_KNNCLASSIFIER
+        KNNClassifer knn;
+        knn.fit(xtrain, ytrain, 2);
+        logger("validation set Accuracy:", METRICS::ACCURACY(knn.predict(xtest), ytest.values()));
     #endif
     return 0;
 }

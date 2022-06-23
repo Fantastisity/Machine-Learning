@@ -9,10 +9,10 @@
 #endif
 
 namespace MACHINE_LEARNING {
-    class KNNRegressor : public NNModel<KNNRegressor> {
+    class KNNClassifer : public NNModel<KNNClassifer> {
             BallTree<double> tree{};
         public:
-            KNNRegressor() = default;
+            KNNClassifer() = default;
 
             template<typename T, typename R>
             void fit(T&& x, R&& y, const uint8_t verbose = 0) {
@@ -35,14 +35,15 @@ namespace MACHINE_LEARNING {
                 else tmp = std::forward<T>(xtest);
 
                 std::priority_queue<std::pair<double, size_t>> res;
-                double sum;
+                std::unordered_map<double, size_t> counter;
+                size_t cnt; double label;
                 for (size_t i = 0, n = xtest.rowNum(); i < n; ++i) {
-                    res = tree.query(&tmp(i, 0), this->n_neighbors), sum = 0;
+                    res = tree.query(&tmp(i, 0), this->n_neighbors), cnt = 0;
                     while (!res.empty()) {
                         auto cur = res.top(); res.pop();
-                        sum += this->y(cur.second, 0);
+                        if (++counter[this->y(cur.second, 0)] > cnt) cnt = counter[label = this->y(cur.second, 0)];
                     }
-                    ypred(i, 0) = sum / n_neighbors;
+                    ypred(i, 0) = label;
                 }
                 return ypred;
             }

@@ -37,23 +37,23 @@ namespace MACHINE_LEARNING {
                 printf("\t\t\t\t\tParameter Settings\n");
                 printf("**********************************************************\n");
 
-                printf("n neignbors:\t\t\t\t\t\t\t\t\t\t\t   %u\n", n_neighbors);
+                printf("n neignbors:\t\t\t\t\t\t\t\t\t\t\t%u\n", n_neighbors);
                 printf("leaf size:\t\t\t\t\t\t\t\t\t\t\t   %u\n", leaf_size);
                 switch (m) { 
                     case Metric::EUCLIDEAN: 
-                        printf("metric:\t\t\t\t\t\t\t\t\t\t Euclidean\n");
+                        printf("metric:\t\t\t\t\t\t\t\t\t\t\tEuclidean\n");
                         break;
                     case Metric::MANHATTAN:
-                        printf("metric:\t\t\t\t\t\t\t\t\t\t Manhattan\n");
+                        printf("metric:\t\t\t\t\t\t\t\t\t\t\tManhattan\n");
                         break;
                     case Metric::MINKOWSKI:
-                        printf("metric:\t\t\t\t\t\t\t\t\t\t Minkowski\n");
+                        printf("metric:\t\t\t\t\t\t\t\t\t\t\tMinkowski\n");
                         printf("p:\t\t\t\t\t\t\t\t\t\t\t   %u\n", p);
                         break;
                 }
                 switch (algo) {
                     case NNAlgo::BALLTREE:
-                        printf("algorithm:\t\t\t\t\t\t\t\t\t   Ball Tree\n");
+                        printf("algorithm:\t\t\t\t\t\t\t\t\t\tBall Tree\n");
                         break;
                 };
             }

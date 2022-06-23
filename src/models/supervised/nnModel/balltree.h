@@ -89,7 +89,6 @@ namespace MACHINE_LEARNING {
             
             // Ref. https://www.cs.cornell.edu/courses/cs4780/2018fa/lectures/lecturenote16.html
             node* partition(size_t ind[], size_t nrow) {
-                logger(nrow);
                 size_t ncol = mat.colNum();
                 node* root = init_node(nrow, ncol);
                 // Find centroid
@@ -110,7 +109,7 @@ namespace MACHINE_LEARNING {
                 for (size_t i = 0; i < nrow; ++i) {
                     double dist;
                     switch (m) { 
-                        case Metric::EUCLIDEAN: 
+                        case Metric::EUCLIDEAN:
                             dist = UTIL_BASE::MODEL_UTIL::METRICS::euclidean(&mat(ind[i], 0), root->centroid, ncol);
                             break;
                         case Metric::MANHATTAN:
@@ -150,6 +149,7 @@ namespace MACHINE_LEARNING {
                 std::vector<std::pair<T, size_t>> Z(nrow, std::make_pair(0, 0));
                 for (size_t i = 0; i < ncol; ++i) diff[i] = mat(first_node_ind, i) - mat(second_node_ind, i);
                 for (size_t i = 0; i < nrow; ++i) {
+                    Z[i].second = i;
                     for (size_t j = 0; j < ncol; ++j) {
                         Z[i].first += diff[j] * mat(ind[i], j);
                     }
@@ -160,8 +160,8 @@ namespace MACHINE_LEARNING {
                 size_t mid = nrow >> 1;
                 size_t left_child_indices[mid], right_child_indices[nrow - mid];
                 for (size_t i = 0; i < mid; ++i) 
-                    left_child_indices[i] = Z[i].second, right_child_indices[i + mid] = Z[i + mid].second;
-
+                    left_child_indices[i] = Z[i].second, right_child_indices[i] = Z[i + mid].second;
+                for (size_t i = mid; i < nrow - mid; ++i) right_child_indices[i] = Z[i + mid].second;
                 root->left_child = partition(left_child_indices, mid);
                 root->right_child = partition(right_child_indices, nrow - mid);
 
@@ -172,13 +172,13 @@ namespace MACHINE_LEARNING {
             void query(node* root, const T const * point, const size_t n_neighbors, 
                         std::priority_queue<std::pair<double, size_t>>& point_set, double dist_min = -1) {
                 if (dist_min == -1) dist_min = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(point, root->centroid, mat.colNum());
-                if (!point_set.empty() && dist_min >= point_set.top().first) return;
+                if (point_set.size() >= n_neighbors && dist_min >= point_set.top().first) return;
                 if (root->is_leaf) 
                     for (size_t i = 0, n = root->size; i < n; ++i) {
                         double cur_dist = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(point, &mat(root->indices[i], 0), mat.colNum());
-                        if (point_set.top().first > cur_dist) {
-                            if (point_set.size() == n_neighbors) point_set.pop();
+                        if (point_set.size() < n_neighbors || point_set.top().first > cur_dist) {
                             point_set.push(std::make_pair(cur_dist, root->indices[i]));
+                            if (point_set.size() == n_neighbors + 1) point_set.pop();
                         }
                     }
                 else {
