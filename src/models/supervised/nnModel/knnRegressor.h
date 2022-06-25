@@ -8,9 +8,14 @@
 #include "balltree.h"
 #endif
 
+#ifndef KDTREE_INCLUDED
+#define KDTREE_INCLUDED
+#include "kdTree.h"
+#endif
+
 namespace MACHINE_LEARNING {
     class KNNRegressor : public NNModel<KNNRegressor> {
-            BallTree<double> tree{};
+            NNTREE::TreeBase<double>* tree{};
         public:
             KNNRegressor() = default;
 
@@ -19,7 +24,10 @@ namespace MACHINE_LEARNING {
                 init(std::forward<T>(x), std::forward<R>(y));
                 switch (algo) {
                     case NNAlgo::BALLTREE:
-                        tree = BallTree<double>(this->x, this->leaf_size, this->m, this->p);
+                        tree = new NNTREE::BallTree<double>(this->x, this->leaf_size, this->m, this->p);
+                        break;
+                    case NNAlgo::KDTREE:
+                        tree = new NNTREE::KDTree<double>(this->x, this->leaf_size);
                 }
                 if (verbose == 2) print_params();
             }
@@ -36,14 +44,34 @@ namespace MACHINE_LEARNING {
 
                 std::priority_queue<std::pair<double, size_t>> res;
                 double sum;
-                for (size_t i = 0, n = xtest.rowNum(); i < n; ++i) {
-                    res = tree.query(&tmp(i, 0), this->n_neighbors), sum = 0;
+
+                for (size_t i = 0, n = tmp.rowNum(); i < n; ++i) {
+                    sum = 0;
+                    switch (algo) {
+                        case NNAlgo::BRUTEFORCE: {
+                            for (size_t j = 0, m = this->x.rowNum(), ncol = this->x.colNum(); j < m; ++j) {
+                                switch (this->m) { 
+                                    case Metric::EUCLIDEAN:
+                                        res.push(std::make_pair(UTIL_BASE::MODEL_UTIL::METRICS::euclidean(&tmp(i, 0), &this->x(j, 0), ncol), j));
+                                        break;
+                                    case Metric::MANHATTAN:
+                                        res.push(std::make_pair(UTIL_BASE::MODEL_UTIL::METRICS::manhattan(&tmp(i, 0), &this->x(j, 0), ncol), j));
+                                        break;
+                                    case Metric::MINKOWSKI:
+                                        res.push(std::make_pair(UTIL_BASE::MODEL_UTIL::METRICS::minkowski(&tmp(i, 0), &this->x(j, 0), ncol, this->p), j));
+                                        break;
+                                }
+                                if (res.size() > this->n_neighbors) res.pop();
+                            }
+                            break;
+                        }
+                        default: res = tree->query(&tmp(i, 0), this->n_neighbors);
+                    }
                     while (!res.empty()) {
-                        auto cur = res.top(); res.pop();
-                        sum += this->y(cur.second, 0);
+                        sum += this->y(res.top().second, 0); res.pop();
                     }
                     ypred(i, 0) = sum / n_neighbors;
-                }
+                }              
                 return ypred;
             }
     };

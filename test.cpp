@@ -1,10 +1,10 @@
 //#define TEST_OLS
 //#define TEST_LR
-//#define TEST_KNNREGRESSOR
-#define TEST_KNNCLASSIFIER
+#define TEST_KNNREGRESSOR
+//#define TEST_KNNCLASSIFIER
 
-//#define REGRESSION
-#define CLASSIFICATION
+#define REGRESSION
+//#define CLASSIFICATION
 
 #ifndef PARSER_INCLUDED
 #define PARSER_INCLUDED
@@ -114,11 +114,14 @@ int main() {
     
     #elif defined TEST_KNNREGRESSOR
         KNNRegressor knn;
+        knn.set_n_neighbors(10);
+        knn.set_algo(NNAlgo::BALLTREE);
         knn.fit(xtrain, ytrain, 2);
         logger("validation set RMSE:", METRICS::RMSE(knn.predict(xtest), ytest.values()));
     
     #elif defined TEST_KNNCLASSIFIER
         KNNClassifer knn;
+        knn.set_algo(NNAlgo::BRUTEFORCE);
         knn.fit(xtrain, ytrain, 2);
         logger("validation set Accuracy:", METRICS::ACCURACY(knn.predict(xtest), ytest.values()));
     #endif

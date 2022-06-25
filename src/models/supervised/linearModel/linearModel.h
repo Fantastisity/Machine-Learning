@@ -146,7 +146,7 @@ namespace MACHINE_LEARNING {
                         break;
                     case GDType::MINI_BATCH:
                         printf("gradient descent type:\t\t\t\t\t\t\t   m-BGD\n");
-                        printf("batch size:\t\t\t\t\t\t\t\t\t\t\t  %u\n", batch_size);
+                        printf("batch size:\t\t\t\t\t\t\t\t\t\t\t  %3u\n", batch_size);
                         break;
                 }
                 if (r != Regularizor::None) {

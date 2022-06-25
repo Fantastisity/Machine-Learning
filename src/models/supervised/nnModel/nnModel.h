@@ -4,7 +4,7 @@
 #endif
 
 enum class Metric {EUCLIDEAN, MANHATTAN, MINKOWSKI};
-enum class NNAlgo {BALLTREE};
+enum class NNAlgo {BRUTEFORCE, KDTREE, BALLTREE};
 
 namespace MACHINE_LEARNING {
     template<typename M>
@@ -37,8 +37,8 @@ namespace MACHINE_LEARNING {
                 printf("\t\t\t\t\tParameter Settings\n");
                 printf("**********************************************************\n");
 
-                printf("n neignbors:\t\t\t\t\t\t\t\t\t\t\t%u\n", n_neighbors);
-                printf("leaf size:\t\t\t\t\t\t\t\t\t\t\t   %u\n", leaf_size);
+                printf("n neignbors:\t\t\t\t\t\t\t\t\t\t   %2u\n", n_neighbors);
+                printf("leaf size:\t\t\t\t\t\t\t\t\t\t\t   %2u\n", leaf_size);
                 switch (m) { 
                     case Metric::EUCLIDEAN: 
                         printf("metric:\t\t\t\t\t\t\t\t\t\t\tEuclidean\n");
@@ -52,9 +52,14 @@ namespace MACHINE_LEARNING {
                         break;
                 }
                 switch (algo) {
+                    case NNAlgo::BRUTEFORCE:
+                        printf("algorithm:\t\t\t\t\t\t\t\t\t  Brute Force\n");
+                        break;
+                    case NNAlgo::KDTREE:
+                        printf("algorithm:\t\t\t\t\t\t\t\t\t\t  KD Tree\n");
+                        break;
                     case NNAlgo::BALLTREE:
                         printf("algorithm:\t\t\t\t\t\t\t\t\t\tBall Tree\n");
-                        break;
                 };
             }
         public:
