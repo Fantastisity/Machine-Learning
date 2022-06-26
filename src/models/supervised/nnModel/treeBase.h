@@ -63,8 +63,34 @@ namespace MACHINE_LEARNING {
                 }
                 node* root = nullptr;
                 virtual node* partition(size_t ind[], size_t nrow) = 0;
-                virtual void query(node* root, const T const * point, const size_t n_neighbors, 
-                        std::priority_queue<std::pair<double, size_t>>& point_set, double dist_min = -1) = 0;
+            private:
+                // Ref. https://www.cs.cmu.edu/~agray/clsfnn.pdf
+                void query(node* root, const T const * point, const size_t n_neighbors, 
+                        std::priority_queue<std::pair<double, size_t>>& point_set, double dist_min = -1) {
+                    if (!root) return;
+                    if (dist_min == -1) dist_min = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(point, root->split_node, mat.colNum());
+                    if (point_set.size() >= n_neighbors && dist_min >= point_set.top().first) return;
+                    if (root->is_leaf) 
+                        for (size_t i = 0, n = root->size; i < n; ++i) {
+                            double cur_dist = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(point, &mat(root->indices[i], 0), mat.colNum());
+                            if (point_set.size() < n_neighbors || point_set.top().first > cur_dist) {
+                                point_set.push(std::make_pair(cur_dist, root->indices[i]));
+                                if (point_set.size() == n_neighbors + 1) point_set.pop();
+                            }
+                        }
+                    else {
+                        double left_dist  = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(point, root->left_child->split_node, mat.colNum()),
+                               right_dist = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(point, root->right_child->split_node, mat.colNum());
+                        // Child closest to point -> Child furthest to point
+                        if (left_dist < right_dist) {
+                            query(root->left_child, point, n_neighbors, point_set, left_dist);
+                            query(root->right_child, point, n_neighbors, point_set, right_dist);
+                        } else {
+                            query(root->right_child, point, n_neighbors, point_set, right_dist);
+                            query(root->left_child, point, n_neighbors, point_set, left_dist);
+                        }
+                    }
+                }
         };
     }
 }

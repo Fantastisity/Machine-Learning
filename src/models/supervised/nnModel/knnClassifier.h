@@ -15,10 +15,15 @@
 
 namespace MACHINE_LEARNING {
     class KNNClassifer : public NNModel<KNNClassifer> {
-            BallTree<double> tree{};
+            NNTREE::TreeBase<double>* tree = nullptr;
         public:
             KNNClassifer() = default;
-
+            ~KNNClassifer() {
+                if (tree) {
+                    delete tree;
+                    tree = nullptr;
+                }
+            }
             template<typename T, typename R>
             void fit(T&& x, R&& y, const uint8_t verbose = 0) {
                 init(std::forward<T>(x), std::forward<R>(y));

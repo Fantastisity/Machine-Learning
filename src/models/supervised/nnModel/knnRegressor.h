@@ -15,10 +15,15 @@
 
 namespace MACHINE_LEARNING {
     class KNNRegressor : public NNModel<KNNRegressor> {
-            NNTREE::TreeBase<double>* tree{};
+            NNTREE::TreeBase<double>* tree = nullptr;
         public:
             KNNRegressor() = default;
-
+            ~KNNRegressor() {
+                if (tree) {
+                    delete tree;
+                    tree = nullptr;
+                }
+            }
             template<typename T, typename R>
             void fit(T&& x, R&& y, const uint8_t verbose = 0) {
                 init(std::forward<T>(x), std::forward<R>(y));

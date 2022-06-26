@@ -36,7 +36,16 @@ namespace MACHINE_LEARNING {
                 printf("**********************************************************\n");
                 printf("\t\t\t\t\tParameter Settings\n");
                 printf("**********************************************************\n");
-
+                switch (algo) {
+                    case NNAlgo::BRUTEFORCE:
+                        printf("algorithm:\t\t\t\t\t\t\t\t\t  Brute Force\n");
+                        break;
+                    case NNAlgo::KDTREE:
+                        printf("algorithm:\t\t\t\t\t\t\t\t\t\t  KD Tree\n");
+                        break;
+                    case NNAlgo::BALLTREE:
+                        printf("algorithm:\t\t\t\t\t\t\t\t\t\tBall Tree\n");
+                };
                 printf("n neignbors:\t\t\t\t\t\t\t\t\t\t   %2u\n", n_neighbors);
                 printf("leaf size:\t\t\t\t\t\t\t\t\t\t\t   %2u\n", leaf_size);
                 switch (m) { 
@@ -51,16 +60,6 @@ namespace MACHINE_LEARNING {
                         printf("p:\t\t\t\t\t\t\t\t\t\t\t   %u\n", p);
                         break;
                 }
-                switch (algo) {
-                    case NNAlgo::BRUTEFORCE:
-                        printf("algorithm:\t\t\t\t\t\t\t\t\t  Brute Force\n");
-                        break;
-                    case NNAlgo::KDTREE:
-                        printf("algorithm:\t\t\t\t\t\t\t\t\t\t  KD Tree\n");
-                        break;
-                    case NNAlgo::BALLTREE:
-                        printf("algorithm:\t\t\t\t\t\t\t\t\t\tBall Tree\n");
-                };
             }
         public:
             void set_n_neighbors(const size_t n_neighbors) {
