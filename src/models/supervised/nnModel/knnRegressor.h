@@ -34,6 +34,7 @@ namespace MACHINE_LEARNING {
                     case NNAlgo::KDTREE:
                         tree = new NNTREE::KDTree<double>(this->x, this->leaf_size);
                 }
+                tree->init_root();
                 if (verbose == 2) print_params();
             }
 
@@ -47,36 +48,47 @@ namespace MACHINE_LEARNING {
                     tmp = xtest.template asType<double>();
                 else tmp = std::forward<T>(xtest);
 
-                std::priority_queue<std::pair<double, size_t>> res;
-                double sum;
+                auto batch_predict = [&](size_t from, size_t to) {
+                    std::priority_queue<std::pair<double, size_t>> res;
+                    double sum;
 
-                for (size_t i = 0, n = tmp.rowNum(); i < n; ++i) {
-                    sum = 0;
-                    switch (algo) {
-                        case NNAlgo::BRUTEFORCE: {
-                            for (size_t j = 0, m = this->x.rowNum(), ncol = this->x.colNum(); j < m; ++j) {
-                                switch (this->m) { 
-                                    case Metric::EUCLIDEAN:
-                                        res.push(std::make_pair(UTIL_BASE::MODEL_UTIL::METRICS::euclidean(&tmp(i, 0), &this->x(j, 0), ncol), j));
-                                        break;
-                                    case Metric::MANHATTAN:
-                                        res.push(std::make_pair(UTIL_BASE::MODEL_UTIL::METRICS::manhattan(&tmp(i, 0), &this->x(j, 0), ncol), j));
-                                        break;
-                                    case Metric::MINKOWSKI:
-                                        res.push(std::make_pair(UTIL_BASE::MODEL_UTIL::METRICS::minkowski(&tmp(i, 0), &this->x(j, 0), ncol, this->p), j));
-                                        break;
+                    for (size_t i = from; i < to; ++i) {
+                        sum = 0;
+                        switch (algo) {
+                            case NNAlgo::BRUTEFORCE: {
+                                for (size_t j = 0, m = this->x.rowNum(), ncol = this->x.colNum(); j < m; ++j) {
+                                    switch (this->m) { 
+                                        case Metric::EUCLIDEAN:
+                                            res.push(std::make_pair(UTIL_BASE::MODEL_UTIL::METRICS::euclidean(&tmp(i, 0), &this->x(j, 0), ncol), j));
+                                            break;
+                                        case Metric::MANHATTAN:
+                                            res.push(std::make_pair(UTIL_BASE::MODEL_UTIL::METRICS::manhattan(&tmp(i, 0), &this->x(j, 0), ncol), j));
+                                            break;
+                                        case Metric::MINKOWSKI:
+                                            res.push(std::make_pair(UTIL_BASE::MODEL_UTIL::METRICS::minkowski(&tmp(i, 0), &this->x(j, 0), ncol, this->p), j));
+                                            break;
+                                    }
+                                    if (res.size() > this->n_neighbors) res.pop();
                                 }
-                                if (res.size() > this->n_neighbors) res.pop();
+                                break;
                             }
-                            break;
+                            default: res = tree->query(&tmp(i, 0), this->n_neighbors);
                         }
-                        default: res = tree->query(&tmp(i, 0), this->n_neighbors);
-                    }
-                    while (!res.empty()) {
-                        sum += this->y(res.top().second, 0); res.pop();
-                    }
-                    ypred(i, 0) = sum / n_neighbors;
-                }              
+                        while (!res.empty()) {
+                            sum += this->y(res.top().second, 0); res.pop();
+                        }
+                        ypred(i, 0) = sum / n_neighbors;
+                    } 
+                };
+
+                const size_t pcnt = std::thread::hardware_concurrency();
+                std::thread threads[pcnt - 1];
+                size_t n = xtest.rowNum(), batch = n / pcnt;
+                batch_predict(0, batch);
+                for (size_t i = 0, cnt = batch; i < pcnt - 1; ++i, cnt += batch) {
+                    threads[i] = std::thread(batch_predict, cnt, cnt + batch < n ? cnt + batch : n);
+                    threads[i].join();
+                }
                 return ypred;
             }
     };

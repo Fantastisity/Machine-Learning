@@ -36,18 +36,14 @@ namespace MACHINE_LEARNING {
             }
 
             private:
-                Matrix<T> mat;
-                size_t leaf_size, p;
-                Metric m;
-                
                 // Ref. https://www.cs.cornell.edu/courses/cs4780/2018fa/lectures/lecturenote16.html
                 typename TreeBase<T>::node* partition(size_t ind[], size_t nrow) {
-                    size_t ncol = mat.colNum();
+                    size_t ncol = this->mat.colNum();
                     typename TreeBase<T>::node* root = this->init_node(nrow, ncol);
                     // Find centroid
                     for (size_t i = 0; i < nrow; ++i) 
                         for (size_t j = 0; j < ncol; ++j) {
-                            root->split_node[j] += mat(i, j);
+                            root->split_node[j] += this->mat(i, j);
                             if (i == nrow - 1) root->split_node[j] /= nrow;
                         }
                     // Single node case
@@ -62,20 +58,20 @@ namespace MACHINE_LEARNING {
                     size_t first_node_ind;
                     for (size_t i = 0; i < nrow; ++i) {
                         double dist;
-                        switch (m) { 
+                        switch (this->m) { 
                             case Metric::EUCLIDEAN:
-                                dist = UTIL_BASE::MODEL_UTIL::METRICS::euclidean(&mat(ind[i], 0), root->split_node, ncol);
+                                dist = UTIL_BASE::MODEL_UTIL::METRICS::euclidean(&this->mat(ind[i], 0), root->split_node, ncol);
                                 break;
                             case Metric::MANHATTAN:
-                                dist = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(&mat(ind[i], 0), root->split_node, ncol);
+                                dist = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(&this->mat(ind[i], 0), root->split_node, ncol);
                                 break;
                             case Metric::MINKOWSKI:
-                                dist = UTIL_BASE::MODEL_UTIL::METRICS::minkowski(&mat(ind[i], 0), root->split_node, ncol, p);
+                                dist = UTIL_BASE::MODEL_UTIL::METRICS::minkowski(&this->mat(ind[i], 0), root->split_node, ncol, this->p);
                                 break;
                         }
                         if (dist > root->radius) root->radius = dist, first_node_ind = ind[i];
                     }
-                    if (nrow <= leaf_size) { // Leaf nodes; no further splits are needed
+                    if (nrow <= this->leaf_size) { // Leaf nodes; no further splits are needed
                         root->is_leaf = 1;
                         return root;
                     }
@@ -84,15 +80,15 @@ namespace MACHINE_LEARNING {
                     double max_dist = 0;
                     for (size_t i = 0; i < nrow; ++i) {
                         double dist;
-                        switch (m) { 
+                        switch (this->m) { 
                             case Metric::EUCLIDEAN: 
-                                dist = UTIL_BASE::MODEL_UTIL::METRICS::euclidean(&mat(ind[i], 0), &mat(first_node_ind, 0), ncol);
+                                dist = UTIL_BASE::MODEL_UTIL::METRICS::euclidean(&this->mat(ind[i], 0), &this->mat(first_node_ind, 0), ncol);
                                 break;
                             case Metric::MANHATTAN:
-                                dist = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(&mat(ind[i], 0), &mat(first_node_ind, 0), ncol);
+                                dist = UTIL_BASE::MODEL_UTIL::METRICS::manhattan(&this->mat(ind[i], 0), &this->mat(first_node_ind, 0), ncol);
                                 break;
                             case Metric::MINKOWSKI:
-                                dist = UTIL_BASE::MODEL_UTIL::METRICS::minkowski(&mat(ind[i], 0), &mat(first_node_ind, 0), ncol, p);
+                                dist = UTIL_BASE::MODEL_UTIL::METRICS::minkowski(&this->mat(ind[i], 0), &this->mat(first_node_ind, 0), ncol, this->p);
                                 break;
                         }
                         if (dist > max_dist) max_dist = dist, second_node_ind = ind[i];
@@ -101,11 +97,11 @@ namespace MACHINE_LEARNING {
                     // Project data on to (first_node - second_node)
                     T diff[ncol]; memset(diff, 0, sizeof(diff));
                     std::vector<std::pair<T, size_t>> Z(nrow, std::make_pair(0, 0));
-                    for (size_t i = 0; i < ncol; ++i) diff[i] = mat(first_node_ind, i) - mat(second_node_ind, i);
+                    for (size_t i = 0; i < ncol; ++i) diff[i] = this->mat(first_node_ind, i) - this->mat(second_node_ind, i);
                     for (size_t i = 0; i < nrow; ++i) {
                         Z[i].second = i;
                         for (size_t j = 0; j < ncol; ++j) {
-                            Z[i].first += diff[j] * mat(ind[i], j);
+                            Z[i].first += diff[j] * this->mat(ind[i], j);
                         }
                     }
 

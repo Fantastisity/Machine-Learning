@@ -33,17 +33,14 @@ namespace MACHINE_LEARNING {
             }
 
             private:
-                Matrix<T> mat;
-                size_t leaf_size;
-
                 // Ref. https://arxiv.org/pdf/1903.04936.pdf
                 typename TreeBase<T>::node* partition(size_t ind[], size_t nrow) {
-                    size_t ncol = mat.colNum();
+                    size_t ncol = this->mat.colNum();
                     typename TreeBase<T>::node* root = this->init_node(nrow, ncol);
                     // Single node case
                     if (nrow == 1) { 
                         root->is_leaf = 1, root->indices[0] = ind[0], root->size = 1;
-                        std::copy(&mat(ind[0], 0), &mat(ind[0], 0) + ncol, root->split_node);
+                        std::copy(&this->mat(ind[0], 0), &this->mat(ind[0], 0) + ncol, root->split_node);
                         return root;
                     }
                     // Store indices for current subtree
@@ -55,19 +52,19 @@ namespace MACHINE_LEARNING {
                     for (size_t j = 0; j < ncol; ++j) {
                         val_min = std::numeric_limits<double>::max(), val_max = std::numeric_limits<double>::min();
                         for (size_t i = 0; i < nrow; ++i) {
-                            if (mat(ind[i], j) > val_max) val_max = mat(ind[i], j);
-                            if (mat(ind[i], j) < val_min) val_min = mat(ind[i], j);
+                            if (this->mat(ind[i], j) > val_max) val_max = this->mat(ind[i], j);
+                            if (this->mat(ind[i], j) < val_min) val_min = this->mat(ind[i], j);
                         }
                         if (val_max - val_min < spread) spread = val_max - val_min, feature_index = j;
                     }
                     // Determine median of the selected feature
                     std::vector<std::pair<T, size_t>> tmp;
-                    for (size_t i = 0; i < nrow; ++i) tmp.push_back(std::make_pair(mat(ind[i], feature_index), i));
+                    for (size_t i = 0; i < nrow; ++i) tmp.push_back(std::make_pair(this->mat(ind[i], feature_index), i));
                     sort(tmp.begin(), tmp.end());
                     size_t mid = nrow >> 1;
-                    std::copy(&mat(ind[mid], 0), &mat(ind[mid], 0) + ncol, root->split_node);
+                    std::copy(&this->mat(ind[mid], 0), &this->mat(ind[mid], 0) + ncol, root->split_node);
 
-                    if (nrow <= leaf_size) { // Leaf nodes; no further splits are needed
+                    if (nrow <= this->leaf_size) { // Leaf nodes; no further splits are needed
                         root->is_leaf = 1;
                         return root;
                     }

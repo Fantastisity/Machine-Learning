@@ -5,6 +5,7 @@
 
 namespace MACHINE_LEARNING {
     using Param = std::vector<std::pair<char const *, std::initializer_list<elem>>>;
+    using Clf_report_dict = std::unordered_map<std::string, std::vector<std::pair<const char*, double>>>;
     namespace UTIL_BASE {
         namespace MODEL_UTIL {
             template<typename U, typename R, typename T = void>
@@ -190,6 +191,7 @@ namespace MACHINE_LEARNING {
 
                 template<typename T, typename R>
                 inline double RMSE(const Matrix<T>& ypred, const Matrix<R>& ytest) {
+                    assert(ypred.rowNum() == ytest.rowNum());
                     Matrix<double> tmp;
                     if constexpr (std::is_same<T, double>::value && std::is_same<R, double>::value) 
                         tmp = ypred - ytest;
@@ -202,9 +204,47 @@ namespace MACHINE_LEARNING {
 
                 template<typename T, typename R>
                 inline double ACCURACY(const Matrix<T>& ypred, const Matrix<R>& ytest) {
+                    assert(ypred.rowNum() == ytest.rowNum());
                     size_t r = ytest.rowNum(), cnt = 0;
                     for (size_t i = 0; i < r; ++i) if (static_cast<double>(ypred(i, 0)) == static_cast<double>(ytest(i, 0))) ++cnt;
                     return 1.0 * cnt / r;
+                }
+
+                template<typename T, typename R>
+                inline DataFrame<size_t> confusion_matrix(const Matrix<T>& ypred, const Matrix<R>& ytest) {
+                    assert(ypred.rowNum() == ytest.rowNum());
+                    auto unique_label = ypred.unique();
+                    size_t n = unique_label.size(), nrow = ytest.rowNum();
+                    std::vector<std::string> colnames;
+                    for (auto& lab : unique_label) colnames.push_back(std::to_string(lab));
+                    DataFrame<size_t> conf(n, n, std::move(colnames));
+                    for (size_t i = 0, ypred_ind, ytest_ind; i < nrow; ++i) {
+                        ypred_ind = conf.getColByName(std::to_string(ypred(i, 0)).c_str()), 
+                        ytest_ind = conf.getColByName(std::to_string(ytest(i, 0)).c_str());
+                        ++conf(ypred_ind, ytest_ind);
+                    }
+                    return conf;
+                }
+
+                template<typename T, typename R>
+                inline Clf_report_dict
+                classification_report(const Matrix<T>& ypred, const Matrix<R>& ytest) {
+                    auto conf_mat = confusion_matrix(ypred, ytest);
+                    Clf_report_dict report;
+                    double precision, recall, fscore, support;
+                    std::string colname;
+                    for (size_t i = 0, n = conf_mat.rowNum(); i < n; ++i) {
+                        precision = conf_mat(i, i) * 1.0 / conf_mat.sum(i, i + 1, 0, n),
+                        support = conf_mat.sum(0, n, i, i + 1),
+                        recall = conf_mat(i, i) * 1.0 / support,
+                        fscore = 2 * precision * recall / (precision + recall);
+                        colname = conf_mat.getColNameByInd(i);
+                        report[colname].push_back(std::make_pair("precision", precision)),
+                        report[colname].push_back(std::make_pair("recall", recall)),
+                        report[colname].push_back(std::make_pair("fscore", fscore)),
+                        report[colname].push_back(std::make_pair("support", support));
+                    }
+                    return report;
                 }
             }
 

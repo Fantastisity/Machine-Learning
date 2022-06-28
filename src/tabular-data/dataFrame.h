@@ -255,8 +255,20 @@ namespace MACHINE_LEARNING {
                 dt.concat(df.dt, COL);
             }
 
+            T sum(const size_t rStart, const size_t rEnd, const size_t cStart, const size_t cEnd) {
+                return dt.sum(rStart, rEnd, cStart, cEnd);
+            }
+
             void colNameMapping(const char* name, size_t ind) {
                 name2ind[strdup(name)] = ind;
+            }
+
+            const size_t getColByName(const char* name) {
+                return name2ind[name];
+            }
+
+            const char* getColNameByInd(const size_t ind) {
+                return ind2name[ind];
             }
 
             const size_t rowNum() const {
@@ -271,10 +283,8 @@ namespace MACHINE_LEARNING {
                 dt.dim();
             }
 
-            const std::unordered_set<T> unique(const size_t ind) {
-                std::unordered_set<T> tmp;
-                for (size_t i = 0, n = rowNum(); i < n; ++i) tmp.insert(dt(i, ind));
-                return tmp;
+            std::unordered_set<T> unique(const size_t ind) const {
+                return dt.unique(ind);
             }
 
             Matrix<T> values() const {

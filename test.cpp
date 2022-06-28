@@ -1,10 +1,10 @@
 //#define TEST_OLS
 //#define TEST_LR
-#define TEST_KNNREGRESSOR
-//#define TEST_KNNCLASSIFIER
+//#define TEST_KNNREGRESSOR
+#define TEST_KNNCLASSIFIER
 
-#define REGRESSION
-//#define CLASSIFICATION
+//#define REGRESSION
+#define CLASSIFICATION
 
 #ifndef PARSER_INCLUDED
 #define PARSER_INCLUDED
@@ -121,9 +121,17 @@ int main() {
     
     #elif defined TEST_KNNCLASSIFIER
         KNNClassifer knn;
-        knn.set_algo(NNAlgo::BRUTEFORCE);
+        knn.set_n_neighbors(10);
+        knn.set_algo(NNAlgo::KDTREE);
         knn.fit(xtrain, ytrain, 2);
-        logger("validation set Accuracy:", METRICS::ACCURACY(knn.predict(xtest), ytest.values()));
+        auto ypred = knn.predict(xtest);
+        Clf_report_dict conf_mat = METRICS::classification_report(ypred, ytest.values());
+        for (auto& [k, metrics] : conf_mat) {
+            std::cout << k << ":\n";
+            for (auto& [metric, val] : metrics) 
+                std::cout << metric << ": " << val << '\n';
+        }
+        logger("validation set Accuracy:", METRICS::ACCURACY(ypred, ytest.values()));
     #endif
     return 0;
 }

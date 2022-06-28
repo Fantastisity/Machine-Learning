@@ -4,11 +4,6 @@ namespace MACHINE_LEARNING {
         struct TreeBase {
                 std::priority_queue<std::pair<double, size_t>> query(T* point, size_t n_neighbors) {
                     assert(point && n_neighbors);
-                    if (!root) {
-                        size_t nrow = mat.rowNum(), ind[nrow];
-                        for (size_t i = 0; i < nrow; ++i) ind[i] = i;
-                        root = partition(ind, nrow);
-                    }
                     std::priority_queue<std::pair<double, size_t>> q;
                     query(root, point, n_neighbors, q);
                     return q;
@@ -18,6 +13,12 @@ namespace MACHINE_LEARNING {
                         delete root;
                         root = nullptr;
                     }
+                }
+                void init_root() {
+                    if (root) return;
+                    size_t nrow = mat.rowNum(), ind[nrow];
+                    for (size_t i = 0; i < nrow; ++i) ind[i] = i;
+                    root = partition(ind, nrow);
                 }
             protected:
                 Matrix<T> mat;

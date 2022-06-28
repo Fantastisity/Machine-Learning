@@ -270,6 +270,20 @@ namespace MACHINE_LEARNING {
                     }
             }
 
+            std::unordered_set<T> unique(const size_t col_ind = 0) const {
+                std::unordered_set<T> unique_val;
+                for (size_t i = 0; i < row; ++i) unique_val.insert(mat[i * col + col_ind]);
+                return unique_val;
+            }
+
+            T sum(const size_t rStart, const size_t rEnd, const size_t cStart, const size_t cEnd) {
+                assert(rEnd <= row && cEnd <= col);
+                T res = 0;
+                for (size_t r = rStart; r < rEnd; ++r)
+                    for (size_t c = cStart; c < cEnd; ++c) res += mat[r * col + c];
+                return res;
+            }
+
             T* value() {
                 return mat;
             }
