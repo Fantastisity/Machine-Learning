@@ -2,6 +2,7 @@ namespace MACHINE_LEARNING {
     namespace NNTREE {
         template<typename T>
         struct TreeBase {
+                TreeBase() = delete;
                 std::priority_queue<std::pair<double, size_t>> query(T* point, size_t n_neighbors) {
                     assert(point && n_neighbors);
                     std::priority_queue<std::pair<double, size_t>> q;

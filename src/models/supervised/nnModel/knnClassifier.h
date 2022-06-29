@@ -46,7 +46,6 @@ namespace MACHINE_LEARNING {
                     tmp = xtest.values().template asType<double>();
                 else if constexpr (UTIL_BASE::isMatrix<typename std::remove_reference<T>::type>::val) 
                     tmp = xtest.template asType<double>();
-                else tmp = std::forward<T>(xtest);
 
                 auto batch_predict = [&](size_t from, size_t to) {
                     std::priority_queue<std::pair<double, size_t>> res;

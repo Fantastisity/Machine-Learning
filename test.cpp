@@ -1,7 +1,8 @@
 //#define TEST_OLS
 //#define TEST_LR
+#define TEST_PERCEP
 //#define TEST_KNNREGRESSOR
-#define TEST_KNNCLASSIFIER
+//#define TEST_KNNCLASSIFIER
 
 //#define REGRESSION
 #define CLASSIFICATION
@@ -22,6 +23,13 @@
 #ifndef LR_INCLUDED
 #define LR_INCLUDED
 #include "src/models/supervised/linearModel/lr.h"
+#endif
+#endif
+
+#ifdef TEST_PERCEP
+#ifndef PERCEP_INCLUDED
+#define PERCEP_INCLUDED
+#include "src/models/supervised/linearModel/perceptron.h"
 #endif
 #endif
 
@@ -47,14 +55,15 @@ int main() {
     MACHINE_LEARNING::LinearRegression, 
     #elif defined TEST_LR
     MACHINE_LEARNING::LogisticRegression,
+    #elif defined TEST_PERCEP
+    MACHINE_LEARNING::Perceptron,
     #elif defined TEST_KNNREGRESSOR
     MACHINE_LEARNING::KNNRegressor,
     #elif defined TEST_KNNCLASSIFIER
     MACHINE_LEARNING::KNNClassifer,
     #endif
     MACHINE_LEARNING::DataFrame,
-    MACHINE_LEARNING::elem,
-    MACHINE_LEARNING::Param;
+    MACHINE_LEARNING::elem;
 
     Parser p(
         #ifdef REGRESSION
@@ -81,6 +90,9 @@ int main() {
     #ifdef CLASSIFICATION
         LabelEncoder<elem> encoder(1);
         encoder.fit_transform(Y, 0);
+        #ifdef TEST_PERCEP
+            for (size_t i = 0, n = Y.rowNum(); i < n; ++i) if (!Y(i, 0)) Y(i, 0) = -1;
+        #endif
     #endif
 
     auto [xtrain, xtest, ytrain, ytest] = train_test_split(X, Y, 0.25, 1, 1);
@@ -112,6 +124,12 @@ int main() {
         logger("validation set Accuracy:", METRICS::ACCURACY(clf.predict(xtest), ytest.values()));
         logger("CV Accuracy:", cross_validation(clf, xtrain, ytrain, "ACC"));
     
+    #elif defined TEST_PERCEP
+        Perceptron clf;
+        clf.fit(xtrain, ytrain, 2);
+        logger("validation set Accuracy:", METRICS::ACCURACY(clf.predict(xtest), ytest.values()));
+        logger("CV Accuracy:", cross_validation(clf, xtrain, ytrain, "ACC"));
+    
     #elif defined TEST_KNNREGRESSOR
         KNNRegressor knn;
         knn.set_n_neighbors(10);
@@ -125,8 +143,8 @@ int main() {
         knn.set_algo(NNAlgo::KDTREE);
         knn.fit(xtrain, ytrain, 2);
         auto ypred = knn.predict(xtest);
-        Clf_report_dict conf_mat = METRICS::classification_report(ypred, ytest.values());
-        for (auto& [k, metrics] : conf_mat) {
+        Clf_report_dict report = METRICS::classification_report(ypred, ytest.values());
+        for (auto& [k, metrics] : report) {
             std::cout << k << ":\n";
             for (auto& [metric, val] : metrics) 
                 std::cout << metric << ": " << val << '\n';

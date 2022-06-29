@@ -1,22 +1,18 @@
-#ifndef LINEARMODEL_INCLUDED
-#define LINEARMODEL_INCLUDED
 #include "linearModel.h"
-#endif
 
 namespace MACHINE_LEARNING {
-    class LogisticRegression : public LinearModel<LogisticRegression> {
-            double loss();
-            Matrix<double> gradient(const Matrix<double>& X, const Matrix<double>& Y);
+    class Perceptron : public LinearModel<Perceptron> {
         public:
-            LogisticRegression();
-
             template<typename T, typename R>
             void fit(T&& x, R&& y, const uint8_t verbose = 0) {
                 init(std::forward<T>(x), std::forward<R>(y));
-
-                this->w = Matrix<double>(this->x.colNum(), 1);
-                gradient_descent();
-
+                this->w = Matrix<double>(this->x.colNum(), 1); 
+                for (size_t i = 0, term = 0; i < this->iter && !term; ++i, term = 0) {
+                    for (size_t j = 0, n = this->x.rowNum(); j < n; ++j) {
+                        auto x_tmp = this->x(rngSlicer(j, j + 1), rngSlicer(0, this->x.colNum()));
+                        if ((this->y(j, 0) * (x_tmp * this->w))(0, 0) < 1) this->w += this->y(j, 0) * x_tmp.trans(), ++term;
+                    }
+                }
                 if (verbose) {
                     if (verbose == 2) print_params();
                     print_weights();
@@ -33,8 +29,10 @@ namespace MACHINE_LEARNING {
                 
                 size_t nrow = tmp.rowNum();
                 tmp.addCol(std::vector<double>(nrow, 1.0).data());
-                tmp = UTIL_BASE::MODEL_UTIL::METRICS::sigmoid(tmp * this->w);
-                for (size_t i = 0; i < nrow; ++i) tmp(i, 0) = tmp(i, 0) < 0.5 ? 0 : 1;
+
+                tmp = tmp * this->w;
+
+                for (size_t i = 0; i < nrow; ++i) tmp(i, 0) = tmp(i, 0) < 0 ? -1 : 1;
                 return tmp;
             }
     };

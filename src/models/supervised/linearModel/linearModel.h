@@ -77,8 +77,7 @@ namespace MACHINE_LEARNING {
                                     term = 1;
                                     break;
                                 }
-                                auto dL = gradient(x(rngSlicer(j, j + 1), rngSlicer(0, x.colNum())), 
-                                                   y(rngSlicer(j, j + 1), rngSlicer(0, y.colNum())));
+                                auto dL = gradient(x(rngSlicer(j, j + 1), rngSlicer(0, x.colNum())), y(j, 0));
                                 
                                 if (!seen[j]) {
                                     seen[j] = 1;
@@ -120,7 +119,7 @@ namespace MACHINE_LEARNING {
                                 }
                                 num = std::min(static_cast<size_t>(batch_size), n - j);
                                 w -= gradient(x(ptrSlicer(ind + j, num), rngSlicer(x.colNum())), 
-                                              y(ptrSlicer(ind + j, num), rngSlicer(y.colNum()))) * eta;
+                                                y(ptrSlicer(ind + j, num), rngSlicer(y.colNum()))) * eta;
                             }
                         }
                         #ifdef WRITE_TO_FILE
@@ -167,7 +166,7 @@ namespace MACHINE_LEARNING {
                 
                 printf("eta:\t\t\t\t\t\t\t\t\t\t\t   %.0e\n", eta);
                 printf("epsilon:\t\t\t\t\t\t\t\t\t\t    %.2f\n", eps);
-                printf("iterations:\t\t\t\t\t\t\t\t\t\t\t %u\n\n", iter);
+                printf("iterations:\t\t\t\t\t\t\t\t\t\t\t%u\n\n", iter);
             }
 
             void print_weights() {

@@ -37,6 +37,22 @@ namespace MACHINE_LEARNING {
                     std::copy(Mat[i].data(), Mat[i].data() + col, mat + i * col);
             }
 
+            void deepCopy(const std::vector<T>&& Mat) {
+                mat = (T*) malloc(sizeof(T) * cap);
+                if (!mat) {
+                    std::cerr << "error malloc\n"; exit(1);
+                }
+                std::copy(Mat.data(), Mat.data() + Mat.size(), mat);
+            }
+
+            void deepCopy(std::initializer_list<T>&& matIter) {
+                mat = (T*) malloc(sizeof(T) * cap);
+                if (!mat) {
+                    std::cerr << "error malloc\n"; exit(1);
+                }
+                std::copy(matIter.begin(), matIter.end(), mat);
+            }
+
             void deepCopy(typename std::initializer_list<std::initializer_list<T>>::iterator matIter) {
                 mat = (T*) malloc(sizeof(T) * cap);
                 if (!mat) {
@@ -70,7 +86,7 @@ namespace MACHINE_LEARNING {
             }
         public:
             explicit Matrix(size_t cap = 200) : cap(cap) {
-                if (cap > 0) {
+                if (cap) {
                     mat = (T*) calloc(cap, sizeof(T));
                     if (!mat) {
                         std::cerr << "error calloc\n"; exit(1);
@@ -79,7 +95,7 @@ namespace MACHINE_LEARNING {
             }
 
             Matrix(size_t r, size_t c) : row(r), col(c), cap(r * c) {
-                if (cap > 0) {
+                if (cap) {
                     mat = (T*) calloc(cap, sizeof(T));
                     if (!mat) {
                         std::cerr << "error calloc\n"; exit(1);
@@ -90,26 +106,34 @@ namespace MACHINE_LEARNING {
             Matrix(T* Mat, const size_t r, const size_t c) {
                 assert(mat);
                 row = r, col = c, cap = r * c;
-                deepCopy(Mat);
+                if (cap) deepCopy(Mat);
             }
 
-            Matrix(const std::vector<std::vector<T>>&& Mat) {
-                row = Mat.size(), col = Mat[0].size(), cap = row * col;
-                deepCopy(std::forward<const std::vector<std::vector<T>>>(Mat));
+            Matrix(const std::vector<std::vector<T>>&& Mat) : row(Mat.size()), col(Mat[0].size()), cap(row * col) {
+                if (cap) deepCopy(std::forward<const std::vector<std::vector<T>>>(Mat));
             }
 
-            Matrix(const std::initializer_list<std::initializer_list<T>>&& Mat) {
-                row = Mat.size(), col = (*Mat.begin()).size(), cap = row * col;
-                deepCopy(Mat.begin());
+            Matrix(const std::vector<T>&& Mat, const size_t nrow = 0, const size_t ncol = 0) : row(nrow), col(ncol), cap(row * col) {
+                if (cap) deepCopy(std::move(Mat));
             }
 
-            Matrix(const Matrix& m) : row(m.row), col(m.col), cap(m.cap) {
+            Matrix(const std::initializer_list<std::initializer_list<T>>&& Mat) : row(Mat.size()), col((*Mat.begin()).size()), cap(row * col) {
+                if (cap) deepCopy(Mat.begin());
+            }
+
+            Matrix(const std::initializer_list<T>&& Mat, const size_t nrow = 0, const size_t ncol = 0) : row(nrow), col(ncol), cap(row * col) {
+                if (cap) deepCopy(std::move(Mat));
+            }
+
+            Matrix(const Matrix& m) {
                 assert(m.mat);
+                row = m.row, col = m.col, cap = m.cap;
                 deepCopy(m.mat);
             }
 
-            Matrix(Matrix&& m) : row(m.row), col(m.col), cap(m.cap) {
+            Matrix(Matrix&& m) {
                 assert(m.mat);
+                row = m.row, col = m.col, cap = m.cap;
                 mat = m.mat, m.mat = nullptr;
             }
 

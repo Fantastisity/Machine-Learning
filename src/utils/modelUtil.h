@@ -4,10 +4,11 @@
 #endif
 
 namespace MACHINE_LEARNING {
-    using Param = std::vector<std::pair<char const *, std::initializer_list<elem>>>;
-    using Clf_report_dict = std::unordered_map<std::string, std::vector<std::pair<const char*, double>>>;
     namespace UTIL_BASE {
         namespace MODEL_UTIL {
+            using Param = std::vector<std::pair<char const *, std::initializer_list<elem>>>;
+            using Clf_report_dict = std::unordered_map<std::string, std::vector<std::pair<const char*, double>>>;
+            
             template<typename U, typename R, typename T = void>
             struct isModel {
                 const static bool val = 0;

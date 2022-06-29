@@ -32,7 +32,6 @@ namespace MACHINE_LEARNING {
                     tmp = xtest.values().template asType<double>();
                 else if constexpr (UTIL_BASE::isMatrix<typename std::remove_reference<T>::type>::val) 
                     tmp = xtest.template asType<double>();
-                else tmp = std::forward<T>(xtest);
                 
                 tmp.addCol(std::vector<double>(tmp.rowNum(), 1.0).data());
                 return tmp * this->w;
