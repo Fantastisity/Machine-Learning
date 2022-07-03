@@ -10,7 +10,6 @@ namespace MACHINE_LEARNING {
     template<typename M>
     class NNModel {
         protected:
-            std::ofstream output;
             size_t n_neighbors = 5, leaf_size = 20;
             uint32_t p = 2;
             Metric m = Metric::EUCLIDEAN;

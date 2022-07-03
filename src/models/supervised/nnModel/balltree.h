@@ -100,21 +100,16 @@ namespace MACHINE_LEARNING {
                     for (size_t i = 0; i < ncol; ++i) diff[i] = this->mat(first_node_ind, i) - this->mat(second_node_ind, i);
                     for (size_t i = 0; i < nrow; ++i) {
                         Z[i].second = i;
-                        for (size_t j = 0; j < ncol; ++j) {
-                            Z[i].first += diff[j] * this->mat(ind[i], j);
-                        }
+                        for (size_t j = 0; j < ncol; ++j) Z[i].first += diff[j] * this->mat(ind[i], j);
                     }
 
                     // Construct left and right child indices
                     sort(Z.begin(), Z.end());
                     size_t mid = nrow >> 1;
                     size_t left_child_indices[mid], right_child_indices[nrow - mid];
-                    for (size_t i = 0; i < mid; ++i) 
-                        left_child_indices[i] = Z[i].second, right_child_indices[i] = Z[i + mid].second;
+                    for (size_t i = 0; i < mid; ++i) left_child_indices[i] = Z[i].second, right_child_indices[i] = Z[i + mid].second;
                     for (size_t i = mid; i < nrow - mid; ++i) right_child_indices[i] = Z[i + mid].second;
-                    root->left_child = partition(left_child_indices, mid);
-                    root->right_child = partition(right_child_indices, nrow - mid);
-
+                    root->left_child = partition(left_child_indices, mid), root->right_child = partition(right_child_indices, nrow - mid);
                     return root;
                 }
         };

@@ -283,7 +283,7 @@ namespace MACHINE_LEARNING {
                 dt.dim();
             }
 
-            std::unordered_set<T> unique(const size_t ind) const {
+            std::unordered_set<T> unique(const size_t ind = 0) const {
                 return dt.unique(ind);
             }
 

@@ -173,7 +173,7 @@ namespace MACHINE_LEARNING {
                 printf("**********************************************************\n");
                 printf("\t\t\t\t\t  Final Weights\n");
                 printf("**********************************************************\n");
-                for (size_t i = 0, r = w.rowNum(); i < r; ++i) printf("%lld\t\t\t\t\t\t\t\t\t\t\t   %+9.6f\n", i, w(i, 0));
+                for (size_t i = 0, r = w.rowNum(); i < r; ++i) printf("%lld\t\t\t\t\t\t\t\t\t\t\t  %+9.5f\n", i, w(i, 0));
                 puts("");
             }
         public:

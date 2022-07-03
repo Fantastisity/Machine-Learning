@@ -5,7 +5,8 @@
 //#define TEST_KNNCLASSIFIER
 
 //#define REGRESSION
-#define CLASSIFICATION
+//#define BINARY_CLASSIFICATION
+#define MULTICLASS_CLASSIFICATION
 
 #ifndef PARSER_INCLUDED
 #define PARSER_INCLUDED
@@ -68,30 +69,32 @@ int main() {
     Parser p(
         #ifdef REGRESSION
             "simple.csv"
-        #elif defined CLASSIFICATION
+        #elif defined BINARY_CLASSIFICATION
             "iris.csv"
+        #elif defined MULTICLASS_CLASSIFICATION
+            "irisfull.csv"
         #endif
     );
     auto X = p.getX(
         #ifdef REGRESSION
             2, 2
-        #elif defined CLASSIFICATION
+        #elif defined BINARY_CLASSIFICATION || defined MULTICLASS_CLASSIFICATION
             0, 4
         #endif
     );
     auto Y = p.getY(
         #ifdef REGRESSION
             1
-        #elif defined CLASSIFICATION
+        #elif defined BINARY_CLASSIFICATION || defined MULTICLASS_CLASSIFICATION
             4
         #endif
     );
 
-    #ifdef CLASSIFICATION
+    #if defined BINARY_CLASSIFICATION || defined MULTICLASS_CLASSIFICATION
         LabelEncoder<elem> encoder(1);
         encoder.fit_transform(Y, 0);
         #ifdef TEST_PERCEP
-            for (size_t i = 0, n = Y.rowNum(); i < n; ++i) if (!Y(i, 0)) Y(i, 0) = -1;
+            if (Y.unique().size() <= 2) for (size_t i = 0, n = Y.rowNum(); i < n; ++i) if (!Y(i, 0)) Y(i, 0) = -1;
         #endif
     #endif
 
@@ -126,6 +129,7 @@ int main() {
     
     #elif defined TEST_PERCEP
         Perceptron clf;
+        clf.set_eta(0.01);
         clf.fit(xtrain, ytrain, 2);
         logger("validation set Accuracy:", METRICS::ACCURACY(clf.predict(xtest), ytest.values()));
         logger("CV Accuracy:", cross_validation(clf, xtrain, ytrain, "ACC"));

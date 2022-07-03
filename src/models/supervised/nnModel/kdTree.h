@@ -70,11 +70,9 @@ namespace MACHINE_LEARNING {
                     }
 
                     size_t left_child_indices[mid], right_child_indices[nrow - mid - 1];
-                    for (size_t i = 0; i < nrow - mid - 1; ++i)
-                        left_child_indices[i] = tmp[i].second, right_child_indices[i] = tmp[i + mid + 1].second;
+                    for (size_t i = 0; i < nrow - mid - 1; ++i) left_child_indices[i] = tmp[i].second, right_child_indices[i] = tmp[i + mid + 1].second;
                     for (size_t i = nrow - mid - 1; i < mid; ++i) left_child_indices[i] = tmp[i].second;
-                    root->left_child = partition(left_child_indices, mid);
-                    root->right_child = partition(right_child_indices, nrow - mid - 1);
+                    root->left_child = partition(left_child_indices, mid), root->right_child = partition(right_child_indices, nrow - mid - 1);
                     
                     return root;
                 }
