@@ -1,12 +1,13 @@
 //#define TEST_OLS
 //#define TEST_LR
-#define TEST_PERCEP
+//#define TEST_PERCEP
+#define TEST_SVC
 //#define TEST_KNNREGRESSOR
 //#define TEST_KNNCLASSIFIER
 
 //#define REGRESSION
-//#define BINARY_CLASSIFICATION
-#define MULTICLASS_CLASSIFICATION
+#define BINARY_CLASSIFICATION
+//#define MULTICLASS_CLASSIFICATION
 
 #ifndef PARSER_INCLUDED
 #define PARSER_INCLUDED
@@ -31,6 +32,13 @@
 #ifndef PERCEP_INCLUDED
 #define PERCEP_INCLUDED
 #include "src/models/supervised/linearModel/perceptron.h"
+#endif
+#endif
+
+#ifdef TEST_SVC
+#ifndef SVC_INCLUDED
+#define SVC_INCLUDED
+#include "src/models/supervised/SVM/svc.h"
 #endif
 #endif
 
@@ -62,6 +70,8 @@ int main() {
     MACHINE_LEARNING::KNNRegressor,
     #elif defined TEST_KNNCLASSIFIER
     MACHINE_LEARNING::KNNClassifer,
+    #elif defined TEST_SVC
+    MACHINE_LEARNING::SVC,
     #endif
     MACHINE_LEARNING::DataFrame,
     MACHINE_LEARNING::elem;
@@ -93,7 +103,7 @@ int main() {
     #if defined BINARY_CLASSIFICATION || defined MULTICLASS_CLASSIFICATION
         LabelEncoder<elem> encoder(1);
         encoder.fit_transform(Y, 0);
-        #ifdef TEST_PERCEP
+        #if defined TEST_PERCEP || defined TEST_SVC
             if (Y.unique().size() <= 2) for (size_t i = 0, n = Y.rowNum(); i < n; ++i) if (!Y(i, 0)) Y(i, 0) = -1;
         #endif
     #endif
@@ -130,6 +140,12 @@ int main() {
     #elif defined TEST_PERCEP
         Perceptron clf;
         clf.set_eta(0.01);
+        clf.fit(xtrain, ytrain, 2);
+        logger("validation set Accuracy:", METRICS::ACCURACY(clf.predict(xtest), ytest.values()));
+        logger("CV Accuracy:", cross_validation(clf, xtrain, ytrain, "ACC"));
+    
+    #elif defined TEST_SVC
+        SVC clf;
         clf.fit(xtrain, ytrain, 2);
         logger("validation set Accuracy:", METRICS::ACCURACY(clf.predict(xtest), ytest.values()));
         logger("CV Accuracy:", cross_validation(clf, xtrain, ytrain, "ACC"));

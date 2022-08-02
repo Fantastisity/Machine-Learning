@@ -19,98 +19,6 @@ namespace MACHINE_LEARNING {
                 const static bool val = 1;
             };
 
-            namespace {
-                template<typename T>
-                struct EncoderBase {
-                    void fit(const DataFrame<T>& m, const size_t col) {
-                        size_t n = m.rowNum();
-                        for (size_t i = 0; i < n; ++i) 
-                            if (!mapping.count(m(i, col))) reverse_mapping[mapping[m(i, col)] = cnt++] = m(i, col);
-                        --cnt;
-                    }
-                    protected:
-                        std::unordered_map<T, ll> mapping;
-                        std::unordered_map<ll, T> reverse_mapping;
-                        ll cnt;
-                        bool inplace;
-                        EncoderBase(const bool inplace, ll cnt) : inplace(inplace), cnt(cnt) {}
-                };
-            }
-
-            template<typename T>
-            struct LabelEncoder : public EncoderBase<T> {
-                LabelEncoder(const bool inplace = 0, const ll cnt = 0) : EncoderBase<T>(inplace, cnt) {}
-                void transform(DataFrame<T>& m, const size_t col) {
-                    size_t n = m.rowNum();
-                    if (this->inplace) for (size_t i = 0; i < n; ++i) m(i, col) = this->mapping[m(i, col)];
-                    else {
-                        DataFrame<T> tmp(n, 1);
-                        for (size_t i = 0; i < n; ++i) tmp.insert(i, 0, this->mapping[m(i, col)]);
-                        m.cbind(tmp);
-                    }
-                }
-
-                void fit_transform(DataFrame<T>& m, const size_t col) {
-                    this->fit(m, col), transform(m, col);
-                }
-
-                void inverse_transform(DataFrame<T>& m, const size_t col) {
-                    size_t n = m.rowNum();
-                    for (size_t i = 0; i < n; ++i) m(i, col) = this->reverse_mapping[m(i, col)];
-                }
-            };
-
-            template<typename T>
-            struct OnehotEncoder : public EncoderBase<T> {
-                OnehotEncoder(const bool inplace = 0, const ll cnt = 1) : EncoderBase<T>(inplace, cnt) {}
-                void transform(DataFrame<T>& m, const size_t col) {
-                    size_t n = m.rowNum(), c = m.colNum();
-                    if (this->cnt <= 32) 
-                        for (size_t i = 0; i < n; ++i) {
-                            std::string bits = std::bitset<32>(this->mapping[m(i, col)]).to_string();
-                            for (size_t j = c; j < c + 32; ++j) m.insert(i, j, bits[j - c] - '0');
-                        }
-                    else if (this->cnt <= 64) 
-                        for (size_t i = 0; i < n; ++i) {
-                            std::string bits = std::bitset<64>(this->mapping[m(i, col)]).to_string();
-                            for (size_t j = c; j < c + 64; ++j) m.insert(i, j, bits[j - c] - '0');
-                        }
-                    else 
-                        for (size_t i = 0; i < n; ++i) {
-                            std::string bits = std::bitset<128>(this->mapping[m(i, col)]).to_string();
-                            for (size_t j = c; j < c + 128; ++j) m.insert(i, j, bits[j - c] - '0');
-                        }
-                    
-                    if (this->inplace) m.dropFeature(col);
-                }
-
-                void fit_transform(Matrix<T>& m, const size_t col) {
-                    this->fit(m, col), transform(m, col);
-                }
-
-                void inverse_transform(DataFrame<T>& m, const size_t col) {
-                    size_t n = m.rowNum(), c = m.colNum();
-                    if (this->cnt <= 32) this->cnt = 32;
-                    else if (this->cnt <= 64) this->cnt = 64;
-                    else this->cnt = 128;
-                    size_t* remove_col = (size_t*) malloc(sizeof(size_t) * this->cnt);
-                    if (!remove_col) {
-                        std::cerr << "error malloc\n"; exit(1);
-                    }
-                    for (size_t i = 0; i < n; ++i) {
-                        ll val = 0;
-                        for (size_t j = c - this->cnt; j < c; ++j) {
-                            val |= static_cast<ll>(m(i, j));
-                            val <<= 1;
-                            if (!i) remove_col[j - (c - this->cnt)] = j;
-                        }
-                        m.insert(i, c, this->reverse_mapping[val >> 1]);
-                    }
-                    m.dropFeature(remove_col, this->cnt);
-                    free(remove_col);
-                }
-            };
-
             namespace METRICS {
                 template<typename T, typename R>
                 inline auto minkowski(const T* const pointA, const R* const pointB, size_t n, size_t p = 1) 
@@ -248,6 +156,125 @@ namespace MACHINE_LEARNING {
                     return report;
                 }
             }
+
+            namespace KERNEL {
+                enum class Kernel {LINEAR, RBF, GAUSSIAN};
+                template<typename T, typename R>
+                inline auto linear(const T* const pointA, const R* const pointB, size_t n) 
+                -> typename std::enable_if<isNumerical<T>::val && isNumerical<R>::val, double>::type {
+                    double res = 0;
+                    for (size_t i = 0; i < n; ++i) res += pointA[i] * pointB[i];
+                    return res;
+                }
+
+                template<typename T, typename R>
+                inline auto rbf(const T* const pointA, const R* const pointB, size_t n, float gamma) 
+                -> typename std::enable_if<isNumerical<T>::val && isNumerical<R>::val, double>::type {
+                    double norm = 0;
+                    for (size_t i = 0; i < n; ++i) norm += (pointA[i] - pointB[i]) * (pointA[i] - pointB[i]);
+                    return exp(-gamma * norm);
+                }
+
+                template<typename T, typename R>
+                inline auto gaussian(const T* const pointA, const R* const pointB, size_t n, float sigma) 
+                -> typename std::enable_if<isNumerical<T>::val && isNumerical<R>::val, double>::type {
+                    double res = 0, norm = 0;
+                    for (size_t i = 0; i < n; ++i) norm += (pointA[i] - pointB[i]) * (pointA[i] - pointB[i]);
+                    return exp(-norm / (2 * sigma * sigma));
+                }
+            }
+
+            namespace {
+                template<typename T>
+                struct EncoderBase {
+                    void fit(const DataFrame<T>& m, const size_t col) {
+                        size_t n = m.rowNum();
+                        for (size_t i = 0; i < n; ++i) 
+                            if (!mapping.count(m(i, col))) reverse_mapping[mapping[m(i, col)] = cnt++] = m(i, col);
+                        --cnt;
+                    }
+                    protected:
+                        std::unordered_map<T, ll> mapping;
+                        std::unordered_map<ll, T> reverse_mapping;
+                        ll cnt;
+                        bool inplace;
+                        EncoderBase(const bool inplace, ll cnt) : inplace(inplace), cnt(cnt) {}
+                };
+            }
+
+            template<typename T>
+            struct LabelEncoder : public EncoderBase<T> {
+                LabelEncoder(const bool inplace = 0, const ll cnt = 0) : EncoderBase<T>(inplace, cnt) {}
+                void transform(DataFrame<T>& m, const size_t col) {
+                    size_t n = m.rowNum();
+                    if (this->inplace) for (size_t i = 0; i < n; ++i) m(i, col) = this->mapping[m(i, col)];
+                    else {
+                        DataFrame<T> tmp(n, 1);
+                        for (size_t i = 0; i < n; ++i) tmp.insert(i, 0, this->mapping[m(i, col)]);
+                        m.cbind(tmp);
+                    }
+                }
+
+                void fit_transform(DataFrame<T>& m, const size_t col) {
+                    this->fit(m, col), transform(m, col);
+                }
+
+                void inverse_transform(DataFrame<T>& m, const size_t col) {
+                    size_t n = m.rowNum();
+                    for (size_t i = 0; i < n; ++i) m(i, col) = this->reverse_mapping[m(i, col)];
+                }
+            };
+
+            template<typename T>
+            struct OnehotEncoder : public EncoderBase<T> {
+                OnehotEncoder(const bool inplace = 0, const ll cnt = 1) : EncoderBase<T>(inplace, cnt) {}
+                void transform(DataFrame<T>& m, const size_t col) {
+                    size_t n = m.rowNum(), c = m.colNum();
+                    if (this->cnt <= 32) 
+                        for (size_t i = 0; i < n; ++i) {
+                            std::string bits = std::bitset<32>(this->mapping[m(i, col)]).to_string();
+                            for (size_t j = c; j < c + 32; ++j) m.insert(i, j, bits[j - c] - '0');
+                        }
+                    else if (this->cnt <= 64) 
+                        for (size_t i = 0; i < n; ++i) {
+                            std::string bits = std::bitset<64>(this->mapping[m(i, col)]).to_string();
+                            for (size_t j = c; j < c + 64; ++j) m.insert(i, j, bits[j - c] - '0');
+                        }
+                    else 
+                        for (size_t i = 0; i < n; ++i) {
+                            std::string bits = std::bitset<128>(this->mapping[m(i, col)]).to_string();
+                            for (size_t j = c; j < c + 128; ++j) m.insert(i, j, bits[j - c] - '0');
+                        }
+                    
+                    if (this->inplace) m.dropFeature(col);
+                }
+
+                void fit_transform(Matrix<T>& m, const size_t col) {
+                    this->fit(m, col), transform(m, col);
+                }
+
+                void inverse_transform(DataFrame<T>& m, const size_t col) {
+                    size_t n = m.rowNum(), c = m.colNum();
+                    if (this->cnt <= 32) this->cnt = 32;
+                    else if (this->cnt <= 64) this->cnt = 64;
+                    else this->cnt = 128;
+                    size_t* remove_col = (size_t*) malloc(sizeof(size_t) * this->cnt);
+                    if (!remove_col) {
+                        std::cerr << "error malloc\n"; exit(1);
+                    }
+                    for (size_t i = 0; i < n; ++i) {
+                        ll val = 0;
+                        for (size_t j = c - this->cnt; j < c; ++j) {
+                            val |= static_cast<ll>(m(i, j));
+                            val <<= 1;
+                            if (!i) remove_col[j - (c - this->cnt)] = j;
+                        }
+                        m.insert(i, c, this->reverse_mapping[val >> 1]);
+                    }
+                    m.dropFeature(remove_col, this->cnt);
+                    free(remove_col);
+                }
+            };
 
             std::tuple<DataFrame<elem>, DataFrame<elem>, DataFrame<elem>, DataFrame<elem>>
             train_test_split(DataFrame<elem> X, DataFrame<elem> Y, const float test_size = 0.25, 
