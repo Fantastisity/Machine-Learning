@@ -294,6 +294,19 @@ namespace MACHINE_LEARNING {
                     }
             }
 
+            Matrix sample(size_t n = 0, float frac = 0) {
+                assert((n > 0 && n <= row && !frac) || (!n && frac > 0));
+                if (frac) n = row * frac;
+                std::random_device rd;
+                std::mt19937 gen(rd());
+                std::unordered_set<size_t> res;
+                for (size_t i = row - n; i < row; ++i) {
+                    size_t v = std::uniform_int_distribution<unsigned long long>(0, i)(gen);
+                    if (!res.insert(v).second) res.insert(i);
+                }
+                return mat(ptrSlicer(vector<size_t>(res.begin(), res.end()).data(), n), rngSlicer(col));
+            }
+
             std::unordered_set<T> unique(const size_t col_ind = 0) const {
                 std::unordered_set<T> unique_val;
                 for (size_t i = 0; i < row; ++i) unique_val.insert(mat[i * col + col_ind]);

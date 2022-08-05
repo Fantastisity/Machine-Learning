@@ -62,6 +62,7 @@ namespace MACHINE_LEARNING {
                     }
                 }
             }
+
             DataFrame(T** Mat, const size_t nrow, const size_t ncol, const std::vector<std::string>&& colnames = {}) : dt(Mat, nrow, ncol) {
                 if (!colnames.empty()) {
                     init_ind2name(ncol, 0);
@@ -71,6 +72,7 @@ namespace MACHINE_LEARNING {
                     }
                 }
             }
+
             DataFrame(const std::vector<std::vector<T>>&& Mat, const std::vector<std::string>&& colnames = {}) : dt(std::move(Mat)) {
                 if (!colnames.empty()) {
                     size_t ncol = Mat[0].size();
@@ -81,6 +83,7 @@ namespace MACHINE_LEARNING {
                     }
                 }
             }
+
             DataFrame(const std::initializer_list<std::initializer_list<T>>&& Mat, const std::vector<std::string>&& colnames = {}) 
             : dt(std::move(Mat)) {
                 if (!colnames.empty()) {
@@ -92,6 +95,7 @@ namespace MACHINE_LEARNING {
                     }
                 }
             }
+            
             DataFrame(const Matrix<T>& m, const std::vector<std::string>&& colnames = {}) : dt(m) {
                 if (!colnames.empty()) {
                     size_t ncol = dt.col;
@@ -102,6 +106,7 @@ namespace MACHINE_LEARNING {
                     }
                 }
             }
+
             DataFrame(Matrix<T>&& m, const std::vector<std::string>&& colnames = {}) : dt(std::move(m)) {
                 if (!colnames.empty()) {
                     size_t ncol = dt.col;
@@ -112,6 +117,7 @@ namespace MACHINE_LEARNING {
                     }
                 }
             }
+
             DataFrame(const std::unordered_map<std::string, std::vector<T>>& cols) {
                 size_t cnt = 0;
                 init_ind2name(cols.size(), 0);
@@ -121,6 +127,7 @@ namespace MACHINE_LEARNING {
                     ind2name[cnt++] = tmp;
                 }
             }
+
             DataFrame(const DataFrame& df) : dt(df.dt) {
                 if (!df.name2ind.empty()) {
                     name2ind = df.name2ind;
@@ -128,11 +135,16 @@ namespace MACHINE_LEARNING {
                     for (size_t i = 0; i < dt.col; ++i) ind2name[i] = strdup(df.ind2name[i]);
                 }
             }
+
             DataFrame(DataFrame&& df) : dt(std::move(df.dt)) {
                 if (!df.name2ind.empty()) {
                     name2ind = df.name2ind;
                     ind2name = df.ind2name, df.ind2name = nullptr;
                 }
+            }
+
+            ~DataFrame() {
+                dealloc();
             }
 
             auto& operator()(const size_t r, const size_t c) const {
@@ -141,6 +153,10 @@ namespace MACHINE_LEARNING {
 
             void shuffle(size_t random_state) {
                 dt.shuffle(random_state);
+            }
+
+            DataFrame sample(size_t n = 0, float frac = 0) {
+                return DataFrame(dt.sample(n, frac));
             }
 
             template<typename R, typename U>
@@ -289,10 +305,6 @@ namespace MACHINE_LEARNING {
 
             Matrix<T> values() const {
                 return dt;
-            }
-
-            ~DataFrame() {
-                dealloc();
             }
 
             template<typename R>

@@ -10,12 +10,12 @@ namespace MACHINE_LEARNING {
             using Clf_report_dict = std::unordered_map<std::string, std::vector<std::pair<const char*, double>>>;
             
             template<typename U, typename R, typename T = void>
-            struct isModel {
+            struct isSupervisedModel {
                 const static bool val = 0;
             };
 
             template<typename U, typename R>
-            struct isModel<U, R, Void<decltype(&U::template fit<R, R>)>> {
+            struct isSupervisedModel<U, R, Void<decltype(&U::template fit<R, R>)>> {
                 const static bool val = 1;
             };
 
@@ -286,7 +286,7 @@ namespace MACHINE_LEARNING {
             template<template<class> typename Base, typename M>
             inline auto cross_validation(Base<M>& estimator, DataFrame<elem>& X, DataFrame<elem>& Y, 
                                     const char* scoring = "RMSE", size_t k = 5) 
-            -> typename std::enable_if<isModel<Base<M>, Matrix<double>>::val, double>::type {
+            -> typename std::enable_if<isSupervisedModel<Base<M>, Matrix<double>>::val, double>::type {
                 if (k > X.rowNum()) k = 1;
                 auto [indTrain, indTest, range, n] = k_fold(k, X.rowNum()); 
                 double score = 0;
@@ -306,7 +306,7 @@ namespace MACHINE_LEARNING {
 
             template<template<class> typename Base, typename M>
             inline auto grid_search(Base<M>& estimator, Param param_grid, DataFrame<elem>& X, DataFrame<elem>& Y)
-            -> typename std::enable_if<isModel<Base<M>, Matrix<double>>::val, 
+            -> typename std::enable_if<isSupervisedModel<Base<M>, Matrix<double>>::val, 
                         std::pair<std::vector<std::pair<char const *, elem>>, double> >::type {
                 std::vector<std::pair<char const *, elem>> tmp;
                 std::vector<std::vector<std::pair<char const *, elem>>> param_comb;

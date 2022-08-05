@@ -5,7 +5,7 @@
 
 #ifndef BALLTREE_INCLUDED
 #define BALLTREE_INCLUDED
-#include "balltree.h"
+#include "ballTree.h"
 #endif
 
 #ifndef KDTREE_INCLUDED
