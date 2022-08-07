@@ -1,13 +1,18 @@
+//#define SUPERVISED
 //#define TEST_OLS
 //#define TEST_LR
 //#define TEST_PERCEP
-#define TEST_SVC
+//#define TEST_SVC
 //#define TEST_KNNREGRESSOR
 //#define TEST_KNNCLASSIFIER
 
 //#define REGRESSION
-#define BINARY_CLASSIFICATION
+//#define BINARY_CLASSIFICATION
 //#define MULTICLASS_CLASSIFICATION
+
+#define UNSUPERVISED
+#define CLUSTERING
+#define TEST_KMEANS
 
 #ifndef PARSER_INCLUDED
 #define PARSER_INCLUDED
@@ -56,8 +61,16 @@
 #endif
 #endif
 
+#ifdef TEST_KMEANS
+#ifndef KMEANS_INCLUDED
+#define KMEANS_INCLUDED
+#include "src/models/unsupervised/clusteringModel/kMeans.h"
+#endif
+#endif
+
 int main() {
     using namespace MACHINE_LEARNING::UTIL_BASE::MODEL_UTIL;
+    using namespace MACHINE_LEARNING::UTIL_BASE::MODEL_UTIL::PREPROCESSING;
     using
     MACHINE_LEARNING::Parser, 
     #ifdef TEST_OLS
@@ -72,6 +85,8 @@ int main() {
     MACHINE_LEARNING::KNNClassifer,
     #elif defined TEST_SVC
     MACHINE_LEARNING::SVC,
+    #elif defined TEST_KMEANS
+    MACHINE_LEARNING::KMeans,
     #endif
     MACHINE_LEARNING::DataFrame,
     MACHINE_LEARNING::elem;
@@ -83,6 +98,8 @@ int main() {
             "iris.csv"
         #elif defined MULTICLASS_CLASSIFICATION
             "irisfull.csv"
+        #elif defined CLUSTERING
+            "clustering.csv"
         #endif
     );
     auto X = p.getX(
@@ -90,8 +107,12 @@ int main() {
             2, 2
         #elif defined BINARY_CLASSIFICATION || defined MULTICLASS_CLASSIFICATION
             0, 4
+        #elif defined CLUSTERING
+            0, 9
         #endif
     );
+
+    #ifdef SUPERVISED
     auto Y = p.getY(
         #ifdef REGRESSION
             1
@@ -109,6 +130,11 @@ int main() {
     #endif
 
     auto [xtrain, xtest, ytrain, ytest] = train_test_split(X, Y, 0.25, 1, 1);
+
+    #else
+        MinMaxScaler<elem> scaler;
+        scaler.fit_transform(X);
+    #endif
 
     #ifdef TEST_OLS
         LinearRegression ols;
@@ -170,6 +196,13 @@ int main() {
                 std::cout << metric << ": " << val << '\n';
         }
         logger("validation set Accuracy:", METRICS::ACCURACY(ypred, ytest.values()));
+
+    #elif defined TEST_KMEANS
+        KMeans kmeans;
+        kmeans.set_n_clusters(6);
+        kmeans.fit(X, KMAlgo::HARTIGAN);
+        auto centroids = kmeans._centroids();
+        std::cout << centroids;
     #endif
     return 0;
 }

@@ -157,6 +157,86 @@ namespace MACHINE_LEARNING {
                 }
             }
 
+            namespace PREPROCESSING {
+                template<typename T>
+                struct MinMaxScaler {
+                    T* min_vals = nullptr, * max_vals = nullptr;
+                    ~MinMaxScaler() {
+                        if (min_vals) {
+                            free(min_vals);
+                            min_vals = nullptr;
+                        }
+
+                        if (max_vals) {
+                            free(max_vals);
+                            max_vals = nullptr;
+                        }
+                    }
+                    void fit_transform(DataFrame<T>& dt) {
+                        fit(dt), transform(dt);
+                    }
+                    void fit(const DataFrame<T>& dt) {
+                        tmp_dt = dt;
+                        size_t ncol = dt.colNum();
+                        min_vals = (T*) malloc(sizeof(T) * ncol), max_vals = (T*) malloc(sizeof(T) * ncol);
+                        if (!min_vals || !max_vals) {
+                            std::cerr << "error malloc\n"; exit(1);
+                        }
+                        for (size_t i = 0; i < ncol; ++i) min_vals[i] = dt.minVal(i), max_vals[i] = dt.maxVal(i);
+                    }
+                    void transform(DataFrame<T>& dt) {
+                        size_t nrow = dt.rowNum(), ncol = dt.colNum();
+                        for (size_t i = 0; i < nrow; ++i) 
+                            for (size_t j = 0; j < ncol; ++j) 
+                                dt(i, j) = (dt(i, j) - min_vals[j]) / (max_vals[j] - min_vals[j]);
+                    }
+                    void inverse_transform(DataFrame<T>& dt) {
+                        dt = tmp_dt;
+                    }
+                    private:
+                        DataFrame<T> tmp_dt;
+                };
+
+                template<typename T>
+                struct StandardScaler {
+                    T* means = nullptr, * sds = nullptr;
+                    ~StandardScaler() {
+                        if (means) {
+                            free(means);
+                            means = nullptr;
+                        }
+
+                        if (sds) {
+                            free(sds);
+                            sds = nullptr;
+                        }
+                    }
+                    void fit_transform(DataFrame<T>& dt) {
+                        fit(dt), transform(dt);
+                    }
+                    void fit(const DataFrame<T>& dt) {
+                        tmp_dt = dt;
+                        size_t ncol = dt.colNum();
+                        means = (T*) malloc(sizeof(T) * ncol), sds = (T*) malloc(sizeof(T) * ncol);
+                        if (!means || !sds) {
+                            std::cerr << "error malloc\n"; exit(1);
+                        }
+                        for (size_t i = 0; i < ncol; ++i) means[i] = dt.mean(i), sds[i] = dt.sd(i);
+                    }
+                    void transform(DataFrame<T>& dt) {
+                        size_t nrow = dt.rowNum(), ncol = dt.colNum();
+                        for (size_t i = 0; i < nrow; ++i) 
+                            for (size_t j = 0; j < ncol; ++j) 
+                                dt(i, j) = (dt(i, j) - means[j]) / sds[j];
+                    }
+                    void inverse_transform(DataFrame<T>& dt) {
+                        dt = tmp_dt;
+                    }
+                    private:
+                        DataFrame<T> tmp_dt;
+                };
+            }
+
             namespace KERNEL {
                 enum class Kernel {LINEAR, RBF, GAUSSIAN};
                 template<typename T, typename R>
@@ -188,6 +268,8 @@ namespace MACHINE_LEARNING {
                 template<typename T>
                 struct EncoderBase {
                     void fit(const DataFrame<T>& m, const size_t col) {
+                        if constexpr (std::is_same<T, elem>::value) assert(m(0, col).t != evType::STR);
+                        else assert(isNumerical<T>::val);
                         size_t n = m.rowNum();
                         for (size_t i = 0; i < n; ++i) 
                             if (!mapping.count(m(i, col))) reverse_mapping[mapping[m(i, col)] = cnt++] = m(i, col);

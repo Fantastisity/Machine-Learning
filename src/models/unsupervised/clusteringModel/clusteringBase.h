@@ -6,10 +6,11 @@
 namespace MACHINE_LEARNING {
     class ClusteringBase {
         protected:
-            Matirx<double> x{0};
-            uint8_t n_clusters = 5;
+            Matrix<double> x{0};
+            uint8_t n_clusters;
             uint64_t iter = 500;
             float tol = 0.0001;
+            std::vector<std::vector<size_t>> clusters;
 
             template<typename T>
             void init(T&& x) {
@@ -20,8 +21,9 @@ namespace MACHINE_LEARNING {
                 else this->x = std::forward<T>(x);
             }
         public:
-            void set_n_clusters(const uint8_t n_clusters) {
+            void set_n_clusters(const uint8_t n_clusters = 5) {
                 this->n_clusters = n_clusters;
+                clusters.resize(n_clusters);
             }
 
             void set_iter(const uint32_t iter) {

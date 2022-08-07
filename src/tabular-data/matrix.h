@@ -186,6 +186,11 @@ namespace MACHINE_LEARNING {
                 mat[r * col + c] = std::forward<R>(val);
             }
 
+            void addRow(T* r) {
+                size_t new_row = row + 1;
+                for (size_t i = 0; i < col; ++i) insert(new_row, i, r[i]);
+            }
+
             void addCol(T* c) {
                 T* m = (T*) malloc(sizeof(T) * (cap = row * ++col));
                 for (size_t i = 0; i < row; ++i) {
@@ -294,7 +299,7 @@ namespace MACHINE_LEARNING {
                     }
             }
 
-            Matrix sample(size_t n = 0, float frac = 0) {
+            Matrix sample(size_t n = 1, float frac = 0) {
                 assert((n > 0 && n <= row && !frac) || (!n && frac > 0));
                 if (frac) n = row * frac;
                 std::random_device rd;
@@ -304,7 +309,7 @@ namespace MACHINE_LEARNING {
                     size_t v = std::uniform_int_distribution<unsigned long long>(0, i)(gen);
                     if (!res.insert(v).second) res.insert(i);
                 }
-                return mat(ptrSlicer(vector<size_t>(res.begin(), res.end()).data(), n), rngSlicer(col));
+                return (*this)(ptrSlicer(std::vector<size_t>(res.begin(), res.end()).data(), n), rngSlicer(col));
             }
 
             std::unordered_set<T> unique(const size_t col_ind = 0) const {

@@ -130,15 +130,14 @@ namespace MACHINE_LEARNING {
 
             DataFrame(const DataFrame& df) : dt(df.dt) {
                 if (!df.name2ind.empty()) {
-                    name2ind = df.name2ind;
-                    init_ind2name(dt.col, 0);
-                    for (size_t i = 0; i < dt.col; ++i) ind2name[i] = strdup(df.ind2name[i]);
+                    for (auto& [k, v] : df.name2ind) name2ind[strdup(k)] = v;
+                    init_ind2name(df.colNum());
                 }
             }
 
             DataFrame(DataFrame&& df) : dt(std::move(df.dt)) {
                 if (!df.name2ind.empty()) {
-                    name2ind = df.name2ind;
+                    name2ind = df.name2ind, df.name2ind.clear();
                     ind2name = df.ind2name, df.ind2name = nullptr;
                 }
             }
@@ -155,7 +154,7 @@ namespace MACHINE_LEARNING {
                 dt.shuffle(random_state);
             }
 
-            DataFrame sample(size_t n = 0, float frac = 0) {
+            DataFrame sample(size_t n = 1, float frac = 0) {
                 return DataFrame(dt.sample(n, frac));
             }
 
@@ -197,7 +196,7 @@ namespace MACHINE_LEARNING {
                 dealloc();
                 dt = df.dt;
                 if (df.ind2name) {
-                    name2ind = df.name2ind;
+                    for (auto& [k, v] : df.name2ind) name2ind[strdup(k)] = v;
                     init_ind2name(df.colNum());
                 }
                 return *this;
@@ -207,14 +206,60 @@ namespace MACHINE_LEARNING {
                 dealloc();
                 dt = std::move(df.dt);
                 if (df.ind2name) {
-                    name2ind = df.name2ind;
+                    name2ind = df.name2ind, df.name2ind.clear();
                     ind2name = df.ind2name, df.ind2name = nullptr;
                 }
                 return *this;
             }
 
+            double mean(const size_t c) const {
+                assert(c < colNum());
+                if constexpr (std::is_same<T, elem>::value) assert(dt(0, c).t != evType::STR);
+                else assert(UTIL_BASE::isNumerical<T>::val);
+                double sum = 0;
+                size_t nrow = rowNum();
+                for (size_t i = 0; i < nrow; ++i) sum += dt(i, c);
+                return sum / nrow;
+            }
+
+            double sd(const size_t c) const {
+                assert(c < colNum());
+                if constexpr (std::is_same<T, elem>::value) assert(dt(0, c).t != evType::STR);
+                else assert(UTIL_BASE::isNumerical<T>::val);
+                double sum = 0, mu = mean(c);
+                size_t nrow = rowNum();
+                for (size_t i = 0; i < nrow; ++i) sum += (dt(i, c) - mu) * (dt(i, c) - mu);
+                return std::sqrt(sum / nrow);
+            }
+
+            T minVal(const size_t c) const {
+                assert(c < colNum());
+                if constexpr (std::is_same<T, elem>::value) assert(dt(0, c).t != evType::STR);
+                else assert(UTIL_BASE::isNumerical<T>::val);
+                T mine = dt(0, c);
+                for (size_t i = 1, nrow = rowNum(); i < nrow; ++i) {
+                    if (mine > dt(i, c)) mine = dt(i, c);
+                }
+                return mine;
+            }
+
+            T maxVal(const size_t c) const {
+                assert(c < colNum());
+                if constexpr (std::is_same<T, elem>::value) assert(dt(0, c).t != evType::STR);
+                else assert(UTIL_BASE::isNumerical<T>::val);
+                T maxe = dt(0, c);
+                for (size_t i = 1, nrow = rowNum(); i < nrow; ++i) {
+                    if (maxe < dt(i, c)) maxe = dt(i, c);
+                }
+                return maxe;
+            }
+
             void insert(const size_t r, const size_t c, T&& val) {
                 dt.insert(r, c, std::forward<T>(val));
+            }
+
+            void addRow(T* r) {
+                dt.addRow(r);
             }
 
             void addFeature(T* feat, const char* colname = nullptr) {
