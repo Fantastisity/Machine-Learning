@@ -1,5 +1,5 @@
 ## lightweight c++ implementation of common ML algorithms
-### Sample Usage
+### Sample Usage (retrieved from test.cpp)
 ~~~cpp
 #define SUPERVISED // Supervised learning
 #define TEST_OLS // Ordinary Least Squares
