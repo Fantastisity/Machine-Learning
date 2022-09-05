@@ -64,6 +64,113 @@ namespace MACHINE_LEARNING {
                         for (size_t j = 0; j < c; ++j) mat(i, j) = 1.0 / (1 + exp(-m(i, j)));
                     return mat;
                 }
+                // derivative: d_prefix
+                template<typename T>
+                inline auto d_sigmoid(const Matrix<T>& m) 
+                -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
+                    size_t r = m.rowNum(), c = m.colNum();
+                    Matrix<T> mat(r, c);
+                    for (size_t i = 0; i < r; ++i)
+                        for (size_t j = 0; j < c; ++j) {
+                            auto tmp = 1.0 / (1 + exp(-m(i, j))); mat(i, j) = tmp * (1 - tmp);
+                        }
+                    return mat;
+                }
+
+                template<typename T>
+                inline auto softmax(const Matrix<T>& m) 
+                -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
+                    size_t r = m.rowNum(), c = m.colNum();
+                    Matrix<T> mat(r, c);
+                    double sum[r]; memset(sum, 0, sizeof(sum));
+                    for (size_t i = 0; i < r; ++i) 
+                        for (size_t j = 0; j < c; ++j) sum[i] += (mat(i, j) = exp(m(i, j)));
+                        
+                    for (size_t i = 0; i < r; ++i) 
+                        for (size_t j = 0; j < c; ++j) mat(i, j) /= sum[i];
+
+                    return mat;
+                }
+
+                template<typename T>
+                inline auto d_softmax(const Matrix<T>& m) 
+                -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
+                    auto tmp = softmax(m);
+                    size_t nrow = m.rowNum(), ncol = m.colNum();
+                    Matrix<T> diag(nrow * ncol, nrow * ncol);
+                    for (size_t i = 0, ind = 0; i < nrow; ++i) {
+                        for (size_t j = 0; j < ncol; ++j) {
+                            diag(ind, ind++) = tmp(i, j);
+                        }
+                    }
+                    return diag - tmp.trans() * tmp;
+                }
+
+                template<typename T>
+                inline auto tanh(const Matrix<T>& m) 
+                -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
+                    size_t r = m.rowNum(), c = m.colNum();
+                    Matrix<T> mat(r, c);
+                    for (size_t i = 0; i < r; ++i)
+                        for (size_t j = 0; j < c; ++j) mat(i, j) = (exp(m(i, j)) - exp(-m(i, j))) / (exp(m(i, j)) + exp(-m(i, j)));
+                    return mat;
+                }
+
+                template<typename T>
+                inline auto d_tanh(const Matrix<T>& m) 
+                -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
+                    size_t r = m.rowNum(), c = m.colNum();
+                    Matrix<T> mat(r, c);
+                    for (size_t i = 0; i < r; ++i)
+                        for (size_t j = 0; j < c; ++j) {
+                            auto tmp = (exp(m(i, j)) - exp(-m(i, j))) / (exp(m(i, j)) + exp(-m(i, j)));
+                            mat(i, j) = 1 - tmp * tmp;
+                        }
+                    return mat;
+                }
+
+                template<typename T>
+                inline auto relu(const Matrix<T>& m) 
+                -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
+                    size_t r = m.rowNum(), c = m.colNum();
+                    Matrix<T> mat(r, c);
+                    for (size_t i = 0; i < r; ++i)
+                        for (size_t j = 0; j < c; ++j) mat(i, j) = m(i, j) >= 0 ? m(i, j) : .1 * m(i, j);
+                    return mat;
+                }
+
+                template<typename T>
+                inline auto d_relu(const Matrix<T>& m) 
+                -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
+                    size_t r = m.rowNum(), c = m.colNum();
+                    Matrix<T> mat(r, c);
+                    for (size_t i = 0; i < r; ++i)
+                        for (size_t j = 0; j < c; ++j) {
+                            if (m(i, j) > 0) mat(i, j) = 1;
+                            else if (m(i, j) < 0) mat(i, j) = 0.1;
+                        }
+                    return mat;
+                }
+
+                template<typename T>
+                inline auto elu(const Matrix<T>& m, float alpha) 
+                -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
+                    size_t r = m.rowNum(), c = m.colNum();
+                    Matrix<T> mat(r, c);
+                    for (size_t i = 0; i < r; ++i)
+                        for (size_t j = 0; j < c; ++j) mat(i, j) = m(i, j) <= 0 ? alpha * (exp(m(i, j)) - 1) : m(i, j);
+                    return mat;
+                }
+
+                template<typename T>
+                inline auto d_elu(const Matrix<T>& m, float alpha) 
+                -> typename std::enable_if<isNumerical<T>::val, Matrix<T>>::type {
+                    size_t r = m.rowNum(), c = m.colNum();
+                    Matrix<T> mat(r, c);
+                    for (size_t i = 0; i < r; ++i)
+                        for (size_t j = 0; j < c; ++j) mat(i, j) = m(i, j) <= 0 ? alpha * exp(m(i, j)) : 1;
+                    return mat;
+                }
 
                 template<typename T>
                 inline auto loge(const Matrix<T>& m) 
@@ -268,8 +375,6 @@ namespace MACHINE_LEARNING {
                 template<typename T>
                 struct EncoderBase {
                     void fit(const DataFrame<T>& m, const size_t col) {
-                        if constexpr (std::is_same<T, elem>::value) assert(m(0, col).t != evType::STR);
-                        else assert(isNumerical<T>::val);
                         size_t n = m.rowNum();
                         for (size_t i = 0; i < n; ++i) 
                             if (!mapping.count(m(i, col))) reverse_mapping[mapping[m(i, col)] = cnt++] = m(i, col);

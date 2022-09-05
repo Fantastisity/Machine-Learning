@@ -77,7 +77,7 @@ namespace MACHINE_LEARNING {
                                     term = 1;
                                     break;
                                 }
-                                auto dL = gradient(x(rngSlicer(j, j + 1), rngSlicer(0, x.colNum())), y(j, 0));
+                                auto dL = gradient(x(rngSlicer(j, j + 1), rngSlicer(x.colNum())), y(rngSlicer(j, j + 1), rngSlicer(y.colNum())));
                                 
                                 if (!seen[j]) {
                                     seen[j] = 1;

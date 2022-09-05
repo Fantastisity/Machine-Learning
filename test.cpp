@@ -1,18 +1,19 @@
-//#define SUPERVISED
-//#define TEST_OLS
+#define SUPERVISED
+#define TEST_OLS
 //#define TEST_LR
 //#define TEST_PERCEP
 //#define TEST_SVC
 //#define TEST_KNNREGRESSOR
 //#define TEST_KNNCLASSIFIER
+//#define TEST_NN
 
-//#define REGRESSION
+#define REGRESSION
 //#define BINARY_CLASSIFICATION
 //#define MULTICLASS_CLASSIFICATION
 
-#define UNSUPERVISED
-#define CLUSTERING
-#define TEST_KMEANS
+// #define UNSUPERVISED
+// #define CLUSTERING
+// #define TEST_KMEANS
 
 #ifndef PARSER_INCLUDED
 #define PARSER_INCLUDED
@@ -68,6 +69,13 @@
 #endif
 #endif
 
+#ifdef TEST_NN
+#ifndef NN_INCLUDED
+#define NN_INCLUDED
+#include "src/models/supervised/NeuralNetworks/nnClassifier.h"
+#endif
+#endif
+
 int main() {
     using namespace MACHINE_LEARNING::UTIL_BASE::MODEL_UTIL;
     using namespace MACHINE_LEARNING::UTIL_BASE::MODEL_UTIL::PREPROCESSING;
@@ -87,6 +95,8 @@ int main() {
     MACHINE_LEARNING::SVC,
     #elif defined TEST_KMEANS
     MACHINE_LEARNING::KMeans,
+    #elif defined TEST_NN
+    MACHINE_LEARNING::NeuralNetworkClassifier,
     #endif
     MACHINE_LEARNING::DataFrame,
     MACHINE_LEARNING::elem;
@@ -203,6 +213,13 @@ int main() {
         kmeans.fit(X, KMAlgo::HARTIGAN);
         auto centroids = kmeans._centroids();
         std::cout << centroids;
+    
+    #elif defined TEST_NN
+        NeuralNetworkClassifier NNClf;
+        NNClf.set_layers({3, 3});
+        NNClf.fit(xtrain, ytrain);
+        logger("validation set Accuracy:", METRICS::ACCURACY(NNClf.predict(xtest), ytest.values()));
+        logger("CV Accuracy:", cross_validation(NNClf, xtrain, ytrain, "ACC"));
     #endif
     return 0;
 }

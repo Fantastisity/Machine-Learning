@@ -104,7 +104,7 @@ namespace MACHINE_LEARNING {
             }
 
             Matrix(T* Mat, const size_t r, const size_t c) {
-                assert(mat);
+                assert(Mat);
                 row = r, col = c, cap = r * c;
                 if (cap) deepCopy(Mat);
             }
@@ -114,7 +114,7 @@ namespace MACHINE_LEARNING {
             }
 
             Matrix(const std::vector<T>&& Mat, const size_t nrow = 0, const size_t ncol = 0) : row(nrow), col(ncol), cap(row * col) {
-                if (cap) deepCopy(std::move(Mat));
+                if (cap) deepCopy(std::forward<const std::vector<T>>(Mat));
             }
 
             Matrix(const std::initializer_list<std::initializer_list<T>>&& Mat) : row(Mat.size()), col((*Mat.begin()).size()), cap(row * col) {
@@ -122,7 +122,7 @@ namespace MACHINE_LEARNING {
             }
 
             Matrix(const std::initializer_list<T>&& Mat, const size_t nrow = 0, const size_t ncol = 0) : row(nrow), col(ncol), cap(row * col) {
-                if (cap) deepCopy(std::move(Mat));
+                if (cap) deepCopy(std::forward<const std::initializer_list<T>>(Mat));
             }
 
             Matrix(const Matrix& m) {

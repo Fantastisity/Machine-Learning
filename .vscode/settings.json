@@ -94,7 +94,8 @@
         "titleBar.activeBackground": "#393e40",
         "titleBar.activeForeground": "#e7e7e7",
         "titleBar.inactiveBackground": "#393e4099",
-        "titleBar.inactiveForeground": "#e7e7e799"
+        "titleBar.inactiveForeground": "#e7e7e799",
+        "commandCenter.border": "#e7e7e799"
     },
     "peacock.color": "#393E40",
     "C_Cpp.errorSquiggles": "Disabled"
