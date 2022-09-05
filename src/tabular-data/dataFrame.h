@@ -8,8 +8,8 @@ namespace MACHINE_LEARNING {
     class DataFrame {
         friend class Parser;
         Matrix<T> dt;
-        std::unordered_map<const char*, size_t, CstrFunctor, CstrFunctor> name2ind;
-        char** ind2name = nullptr;
+        std::unordered_map<const char*, size_t, CstrFunctor, CstrFunctor> name2ind; // column name to index
+        char** ind2name = nullptr; // index to column name
 
         void init_ind2name(size_t n, bool assign = 1) {
             if (ind2name) {
