@@ -1,14 +1,14 @@
 #define SUPERVISED
-#define TEST_OLS
+//#define TEST_OLS
 //#define TEST_LR
 //#define TEST_PERCEP
 //#define TEST_SVC
 //#define TEST_KNNREGRESSOR
 //#define TEST_KNNCLASSIFIER
-//#define TEST_NN
+#define TEST_NN
 
-#define REGRESSION
-//#define BINARY_CLASSIFICATION
+//#define REGRESSION
+#define BINARY_CLASSIFICATION
 //#define MULTICLASS_CLASSIFICATION
 
 // #define UNSUPERVISED
@@ -218,8 +218,8 @@ int main() {
         NeuralNetworkClassifier NNClf;
         NNClf.set_layers({3, 3});
         NNClf.fit(xtrain, ytrain);
-        logger("validation set Accuracy:", METRICS::ACCURACY(NNClf.predict(xtest), ytest.values()));
-        logger("CV Accuracy:", cross_validation(NNClf, xtrain, ytrain, "ACC"));
+        // logger("validation set Accuracy:", METRICS::ACCURACY(NNClf.predict(xtest), ytest.values()));
+        // logger("CV Accuracy:", cross_validation(NNClf, xtrain, ytrain, "ACC"));
     #endif
     return 0;
 }

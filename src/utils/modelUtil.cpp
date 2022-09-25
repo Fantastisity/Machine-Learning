@@ -17,21 +17,24 @@ namespace MACHINE_LEARNING {
 
         std::tuple<size_t*, size_t*, size_t*, size_t> 
         k_fold(const size_t k, const size_t sample_size) {
-            size_t n = static_cast<size_t>(std::ceil(sample_size / (k * 1.0))),
+            size_t n = static_cast<size_t>(std::ceil(sample_size / (k * 1.0))), // Get the number of test data points in a fold
+                // Training set indices
                 * indTrain = (size_t*) malloc(sizeof(size_t) * k * n * (k - 1)),
+                // Test set indices
                 * indTest = (size_t*) malloc(sizeof(size_t) * k * n),
-                * range = (size_t*) malloc(sizeof(size_t) * k * 2);
+                // Stores the number of indices for training and test set (range[kth fold * 2]: training set count, range[kth fold * 2 + 1]: test set count)
+                * range = (size_t*) malloc(sizeof(size_t) * k * 2); 
             if (!indTrain || !indTest || !range) {
                 std::cerr << "error malloc\n"; exit(1);
             }
             for (size_t i = 0, cntTrain, cntTest; i < k; ++i) {
                 cntTrain = 0, cntTest = 0;
                 for (size_t j = 0; j < sample_size; ++j) {
-                    if (j >= n * i && cntTest < n) {
+                    if (j >= n * i && cntTest < n) { // Indices of test data points
                         indTest[i * n + cntTest++] = j;
                         continue;
                     }
-                    indTrain[i * n * (k - 1) + cntTrain++] = j;
+                    indTrain[i * n * (k - 1) + cntTrain++] = j; // Indices of training data points
                 }
                 range[i << 1] = cntTrain, range[(i << 1) + 1] = cntTest;
             }

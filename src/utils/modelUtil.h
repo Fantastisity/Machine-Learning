@@ -6,8 +6,8 @@
 namespace MACHINE_LEARNING {
     namespace UTIL_BASE {
         namespace MODEL_UTIL {
-            using Param = std::vector<std::pair<const char*, std::initializer_list<elem>>>;
-            using Clf_report_dict = std::unordered_map<std::string, std::vector<std::pair<const char*, double>>>;
+            using Param = std::vector<std::pair<const char*, std::initializer_list<elem>>>; // Parameter grid
+            using Clf_report_dict = std::unordered_map<std::string, std::vector<std::pair<const char*, double>>>; // Classification Report
             
             template<typename U, typename R, typename T = void>
             struct isSupervisedModel {
@@ -381,7 +381,7 @@ namespace MACHINE_LEARNING {
                         --cnt;
                     }
                     protected:
-                        std::unordered_map<T, ll> mapping;
+                        std::unordered_map<T, ll> mapping; // Original value to mapped value
                         std::unordered_map<ll, T> reverse_mapping;
                         ll cnt;
                         bool inplace;

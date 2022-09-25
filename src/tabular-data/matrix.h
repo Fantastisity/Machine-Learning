@@ -20,14 +20,31 @@ namespace MACHINE_LEARNING {
 
         T* mat = nullptr;
         size_t row = 0, col = 0, cap = 0;
+
             template<typename F>
-            Matrix& apply(F f) {
+            Matrix& apply(F f) { // Apply a function to each matrix element
                 for (size_t i = 0; i < row; ++i)
                     for (size_t j = 0; j < col; ++j)
                         f(i, j);
                 return *this;
             }
 
+            void resize(const size_t size) {
+                cap = size;
+                mat = (T*) realloc(mat, sizeof(T) * cap);
+                if (!mat) {
+                    std::cerr << "error realloc\n"; exit(1);
+                }
+            }
+
+            void dealloc() {
+                if (mat) {
+                    free(mat);
+                    mat = nullptr;
+                }
+            }
+
+            /* Copy util functions */
             void deepCopy(const std::vector<std::vector<T>>&& Mat) {
                 mat = (T*) malloc(sizeof(T) * cap);
                 if (!mat) {
@@ -68,21 +85,6 @@ namespace MACHINE_LEARNING {
                     std::cerr << "error malloc\n"; exit(1);
                 }
                 std::copy(Mat, Mat + row * col, mat);
-            }
-
-            void resize(const size_t size) {
-                cap = size;
-                mat = (T*) realloc(mat, sizeof(T) * cap);
-                if (!mat) {
-                    std::cerr << "error realloc\n"; exit(1);
-                }
-            }
-
-            void dealloc() {
-                if (mat) {
-                    free(mat);
-                    mat = nullptr;
-                }
             }
         public:
             explicit Matrix(size_t cap = 200) : cap(cap) {
@@ -174,7 +176,7 @@ namespace MACHINE_LEARNING {
                 return col;
             }
 
-            void dim() const {
+            void dim() const { // Prints matrix dimensions
                 std::cout << "[" << row << ", " << col << "]\n";
             }
 
@@ -250,14 +252,14 @@ namespace MACHINE_LEARNING {
             }
 
             template<typename R>
-            Matrix<R> asType() const { // Type conversion
+            Matrix<R> asType() const { // Type conversion (T -> R)
                 if constexpr (std::is_same<T, R>::value) return *this;
                 Matrix<R> m(row, col);
                 UTIL_BASE::MATRIX_UTIL::conv_type(m.mat, mat, row * col);
                 return m;
             }
 
-            static Matrix eye(size_t n) {
+            static Matrix eye(size_t n) { // Identity matrix
                 Matrix m(n, n);
                 for (int i = 0; i < n; ++i) m(i, i) = 1;
                 return m;
@@ -270,7 +272,7 @@ namespace MACHINE_LEARNING {
                 return idm;
             }
 
-            Matrix trans() const {
+            Matrix trans() const { // Leveraged caching
                 Matrix m(col, row);
                 for (size_t i = 0; i < row; i += 6) 
                     for (size_t j = 0; j < col; j += 4) 
@@ -290,21 +292,48 @@ namespace MACHINE_LEARNING {
                 return m;
             }
 
-            void shuffle(size_t random_state) {
+            Matrix multiply(Matrix& rht) const {
+                return multiply(std::move(rht));
+            }
+
+            Matrix multiply(Matrix&& rht) const {
+                assert(row == rht.row && col == rht.col);
+                Matrix m(row, col);
+                auto batch_mult = [&](size_t from, size_t to) {
+                    for (size_t i = from; i < to; ++i) m.mat[i] = mat[i] * rht.mat[i];
+                };
+                const size_t pcnt = std::thread::hardware_concurrency(); // Number of cores
+                std::thread threads[pcnt - 1]; // Ignore the main thread
+                size_t batch = cap / pcnt; // Determine the batch(no. of rows) size
+                batch_mult(0, batch); // Main thread
+                for (size_t i = 0, cnt = batch; i < pcnt - 1; ++i, cnt += batch) { // Remaining threads
+                    threads[i] = std::thread(batch_mult, cnt, cnt + batch < cap ? cnt + batch : cap);
+                    threads[i].join();
+                }
+                return m;
+            }
+
+            void shuffle(size_t random_state) { // Randomly shuffle the matrix
                 srand(random_state);
                 if (row > 1) 
                     for (size_t i = 0, j; i < row - 1; ++i) {
                         j = i + rand() / (RAND_MAX / (row - i) + 1);
-                        std::swap_ranges(mat + i * col, mat + i * col + col, mat + j * col);
+                        std::swap_ranges(mat + i * col, mat + i * col + col, mat + j * col); // Swap two rows
                     }
             }
 
+            /*
+                Return a random sample of rows
+                @param
+                    n: number of rows to return
+                    frac: fraction of rows to return, cannot be used with n  
+            */
             Matrix sample(size_t n = 1, float frac = 0) {
                 assert((n > 0 && n <= row && !frac) || (!n && frac > 0));
                 if (frac) n = row * frac;
                 std::random_device rd;
                 std::mt19937 gen(rd());
-                std::unordered_set<size_t> res;
+                std::unordered_set<size_t> res; // Stores unique row indices
                 for (size_t i = row - n; i < row; ++i) {
                     size_t v = std::uniform_int_distribution<unsigned long long>(0, i)(gen);
                     if (!res.insert(v).second) res.insert(i);
@@ -312,12 +341,13 @@ namespace MACHINE_LEARNING {
                 return (*this)(ptrSlicer(std::vector<size_t>(res.begin(), res.end()).data(), n), rngSlicer(col));
             }
 
-            std::unordered_set<T> unique(const size_t col_ind = 0) const {
+            std::unordered_set<T> unique(const size_t col_ind = 0) const { // Unique elements in a specific column
                 std::unordered_set<T> unique_val;
                 for (size_t i = 0; i < row; ++i) unique_val.insert(mat[i * col + col_ind]);
                 return unique_val;
             }
 
+            // Get sum of elements within row and column ranges
             T sum(const size_t rStart, const size_t rEnd, const size_t cStart, const size_t cEnd) {
                 assert(rEnd <= row && cEnd <= col);
                 T res = 0;
@@ -338,6 +368,7 @@ namespace MACHINE_LEARNING {
                 return mat[r * col + c];
             }
 
+            // Returns a sub matrix
             template<typename Q, typename U>
             auto operator()(UTIL_BASE::MATRIX_UTIL::slice<Q>&& row_slice, UTIL_BASE::MATRIX_UTIL::slice<U>&& col_slice) {
                 Matrix<T> subMat(row_slice.size, col_slice.size);
@@ -345,8 +376,8 @@ namespace MACHINE_LEARNING {
                 for (auto i = row_slice.start; i < row_slice.end; ++i, ++r) {
                     c = 0;
                     for (auto j = col_slice.start; j < col_slice.end; ++j, ++c) {
-                        if constexpr (UTIL_BASE::MATRIX_UTIL::isPTR<Q>::val) r_ind = *i;
-                        else r_ind = i;
+                        if constexpr (UTIL_BASE::MATRIX_UTIL::isPTR<Q>::val) r_ind = *i; // Pointer slicer
+                        else r_ind = i; // Range slicer
 
                         if constexpr (UTIL_BASE::MATRIX_UTIL::isPTR<U>::val) c_ind = *j;
                         else c_ind = j;
@@ -362,6 +393,9 @@ namespace MACHINE_LEARNING {
 
             template<typename R>
             auto operator* (Matrix<R>& rht) const {
+                // Deduce to scalar multiplication if either matrix has only a single entry
+                if (rht.cap == 1) return *this * rht(0, 0);
+                else if (cap == 1) return rht * mat[0];
                 assert(col == rht.row);
                 using tp = decltype(std::declval<T>() * std::declval<R>());
                 Matrix<tp> m(row, rht.col);
@@ -371,6 +405,8 @@ namespace MACHINE_LEARNING {
 
             template<typename R>
             auto operator* (Matrix<R>&& rht) const {
+                if (rht.cap == 1) return *this * rht(0, 0);
+                else if (cap == 1) return rht * mat[0];
                 assert(col == rht.row);
                 using tp = decltype(std::declval<T>() * std::declval<R>());
                 Matrix<tp> m(row, rht.col);

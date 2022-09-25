@@ -21,6 +21,7 @@ namespace MACHINE_LEARNING {
                 }
             }
 
+            // Llyod and Hartigan algorithms for KMeans ref. https://www.tqmp.org/RegularArticles/vol09-1/p015/p015.pdf
             void Lloyd() {
                 size_t nrow = x.rowNum(), ncol = x.colNum();
                 bool terminate = 0;

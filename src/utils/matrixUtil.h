@@ -17,26 +17,35 @@ namespace MACHINE_LEARNING {
                 const T start, end;
                 const size_t size;
                 slice(const T& start, const T& end) : start(start), end(end), size(this->end - start) {}
-                explicit slice(const T& end) : start(0), end(end), size(this->end - start) {}
+                explicit slice(const T& end) : start(0), end(end), size(this->end - start) {} // Starting from the 0th index
             };
 
             template<typename T>
             struct slice<T*> {
                 T* start, * end;
                 const size_t size;
-                slice(T* start, const size_t end) : start(start), end(start + end), size(this->end - start) {}
+                slice(T* start, const size_t len) : start(start), end(start + len), size(len) {}
             };
 
+            // Determine whether s is double, with converted value stored in res
             inline bool isDouble(const char* s, double& res) {
                 char* end;
                 res = strtod(s, &end);
                 return *end == '\0';
             }
 
-            template<typename T, typename R>
-            inline void conv_type(T* res, R* mat, const size_t cap) {
+            /*
+                Convert matrix element type
+                @template param
+                    R: target type
+                    T: original type
+                @param
+                    cap: number of elements
+            */
+            template<typename R, typename T>
+            inline void conv_type(R* res, T* mat, const size_t cap) {
                 for (size_t i = 0; i < cap; ++i) {
-                    res[i] = static_cast<T>(mat[i]);
+                    res[i] = static_cast<R>(mat[i]);
                 }
             }
 
@@ -50,16 +59,17 @@ namespace MACHINE_LEARNING {
                 const static bool val = 1;
             };
 
+            // i: column & row index(mat[i, i])    m: number of rows    na: number of columns of a    nb: number of columns of b
             template<typename T>
             inline bool partial_pivoting(T* a, T* b, const size_t i, const size_t m, const size_t na, const size_t nb) {
                 T tmp = a[i * na + i];
                 size_t swap_ind = -1;
                 for (size_t j = i + 1; j < m; ++j) 
                     if (tmp < std::abs(a[j * na + i]))
-                        tmp = a[j * na + i], swap_ind = j;
-                if (!tmp) return 0;
+                        tmp = a[j * na + i], swap_ind = j; // Get the row index of the maximum value
+                if (!tmp) return 0; // Ignore current column
                 for (size_t j = 0, n = MAX(na, nb); j < n; ++j) {
-                    if (j < na) std::swap(a[i * n + j], a[swap_ind * n + j]);
+                    if (j < na) std::swap(a[i * n + j], a[swap_ind * n + j]); // Exchange row-to-be-swapped with ith row
                     if (b && j < nb) std::swap(b[i * n + j], b[swap_ind * n + j]);
                 }
                 return 1;
@@ -70,7 +80,7 @@ namespace MACHINE_LEARNING {
                 assert(a != nullptr);
                 for (size_t i = 0, r = 0; i < na - 1 && r < m; ++i, ++r) {
                     while (!partial_pivoting(a, b, i, m, na, nb)) {
-                        if (check_invertible) return 0;
+                        if (check_invertible) return 0; // Invertible matrices cannot have zero columns
                         ++i;
                         if (i == na - 1) return 1;
                     }
@@ -126,6 +136,13 @@ namespace MACHINE_LEARNING {
                 return 1;
             }
 
+            /*
+                General matrix multiplcation using threads
+                @param
+                    x: left matrix dim: r * k
+                    y: right matrix dim: k * c
+                    res: stores the multiplication result dim: r * c
+            */
             template<typename X, typename Y, typename Z>
             struct Mult {
                 static void mult(X* x, Y* y, Z* res, size_t r, size_t k, size_t c) {
@@ -134,17 +151,18 @@ namespace MACHINE_LEARNING {
                             for (size_t m = 0; m < k; ++m)
                                 for (size_t j = 0; j < c; ++j) res[i * c + j] += x[i * k + m] * y[m * c + j];
                     };
-                    const size_t pcnt = std::thread::hardware_concurrency();
-                    std::thread threads[pcnt - 1];
-                    size_t batch = r / pcnt;
-                    batch_mult(0, batch);
-                    for (size_t i = 0, cnt = batch; i < pcnt - 1; ++i, cnt += batch) {
+                    const size_t pcnt = std::thread::hardware_concurrency(); // Number of cores
+                    std::thread threads[pcnt - 1]; // Ignore the main thread
+                    size_t batch = r / pcnt; // Determine the batch(no. of rows) size
+                    batch_mult(0, batch); // Main thread
+                    for (size_t i = 0, cnt = batch; i < pcnt - 1; ++i, cnt += batch) { // Remaining threads
                         threads[i] = std::thread(batch_mult, cnt, cnt + batch < r ? cnt + batch : r);
                         threads[i].join();
                     }
                 }
             };
 
+            // SSE multiplication for specific val types (double, int, float)
             template<>
             struct Mult<double, double, double> {
                 static void mult(double* x, double* y, double* res, size_t r, size_t k, size_t c) {
@@ -278,7 +296,15 @@ namespace MACHINE_LEARNING {
         }
     }
 
-    using rngSlicer = UTIL_BASE::MATRIX_UTIL::slice<size_t>;
+    /* 
+        Used for slicing matrix by supplying a row/column range [start, end)
+        eg. Matrix(rngSlicer(2, 3), rngSlicer(1, 2)): get the 2nd row and 1st column
+    */
+    using rngSlicer = UTIL_BASE::MATRIX_UTIL::slice<size_t>; 
+    /* 
+        Used for slicing matrix by supplying a list of indices (start, length)
+        eg. Matrix(ptrSlicer([1, 3, 5], 3), ptrSlicer([2], 1)): get the 1st, 3rd and 5th row and 2nd column
+    */
     using ptrSlicer = UTIL_BASE::MATRIX_UTIL::slice<size_t*>;
 
     struct CstrFunctor {
@@ -292,8 +318,9 @@ namespace MACHINE_LEARNING {
         }
     };
 
+    // Matrix element(used mainly for convertion b.t double and string)
     struct elem {
-        enum class vtype { DBL, STR };
+        enum class vtype { DBL, STR }; // Element value type
         vtype t;
         double dval{0.0};
         char* sval = nullptr;
@@ -366,6 +393,7 @@ namespace MACHINE_LEARNING {
         elem(const double val) : dval(val), t(vtype::DBL) {}
         elem(const char* val) {
             double tmp_dval;
+            // Determine the type of the value
             if (UTIL_BASE::MATRIX_UTIL::isDouble(val, tmp_dval)) dval = tmp_dval, t = vtype::DBL;
             else sval = strdup(val), t = vtype::STR;
         }

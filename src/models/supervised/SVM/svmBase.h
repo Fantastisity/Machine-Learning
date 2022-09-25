@@ -10,6 +10,7 @@ namespace MACHINE_LEARNING {
             float gamma = 0.1, tol = 1e-3, eps = 1e-3, sigma = 1;
             double* alpha = nullptr, * error = nullptr, b = 0, C = 100;
 
+            // SMO algorithm ref. https://www.microsoft.com/en-us/research/uploads/prod/1998/04/sequential-minimal-optimization.pdf
             bool takeStep(size_t i, size_t j) {
                 size_t n = x.rowNum(), m = x.colNum();
                 auto obj_func = [&]() {

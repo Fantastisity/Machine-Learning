@@ -39,7 +39,7 @@ struct Logger {
 
     private:
         std::chrono::steady_clock::time_point start, end;
-        size_t timer_repeats = 1;
+        size_t timer_repeats = 1; // Number of repeats that the timer should run
 };
 
 extern Logger logger;

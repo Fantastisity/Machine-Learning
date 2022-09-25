@@ -4,7 +4,7 @@
 #endif
 // #define WRITE_TO_FILE
 
-enum class GDType { None, BATCH , SAG, MINI_BATCH };
+enum class GDType { None, BATCH , SAG, MINI_BATCH }; // Gradient descent type
 enum class Regularizor { None, L1, L2, ENet };
 
 namespace MACHINE_LEARNING {
@@ -79,12 +79,12 @@ namespace MACHINE_LEARNING {
                                 }
                                 auto dL = gradient(x(rngSlicer(j, j + 1), rngSlicer(x.colNum())), y(rngSlicer(j, j + 1), rngSlicer(y.colNum())));
                                 
-                                if (!seen[j]) {
+                                if (!seen[j]) { // First time seeing the point, initialize its entry in the gradient table
                                     seen[j] = 1;
                                     for (size_t k = 0, n = x.colNum(); k < n; ++k) gradient_table(j, k) = dL(k, 0);
                                     gradient_sum += dL;
                                 }
-                                else for (size_t k = 0, n = x.colNum(); k < n; ++k) 
+                                else for (size_t k = 0, n = x.colNum(); k < n; ++k) // Update the gradient for the points in the gradient table
                                     gradient_sum(k, 0) += dL(k, 0) - gradient_table(j, k), gradient_table(j, k) = dL(k, 0);
                                 
                                 w -= gradient_sum * (eta / m);

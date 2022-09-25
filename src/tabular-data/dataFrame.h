@@ -8,8 +8,8 @@ namespace MACHINE_LEARNING {
     class DataFrame {
         friend class Parser;
         Matrix<T> dt;
-        std::unordered_map<const char*, size_t, CstrFunctor, CstrFunctor> name2ind; // column name to index
-        char** ind2name = nullptr; // index to column name
+        std::unordered_map<const char*, size_t, CstrFunctor, CstrFunctor> name2ind; // Column name to index
+        char** ind2name = nullptr; // Index to column name
 
         void init_ind2name(size_t n, bool assign = 1) {
             if (ind2name) {
@@ -212,6 +212,7 @@ namespace MACHINE_LEARNING {
                 return *this;
             }
 
+            // Returns the mean of a column
             double mean(const size_t c) const {
                 assert(c < colNum());
                 if constexpr (std::is_same<T, elem>::value) assert(dt(0, c).t != evType::STR);
@@ -222,6 +223,7 @@ namespace MACHINE_LEARNING {
                 return sum / nrow;
             }
 
+            // Returns the standard deviation of a column
             double sd(const size_t c) const {
                 assert(c < colNum());
                 if constexpr (std::is_same<T, elem>::value) assert(dt(0, c).t != evType::STR);
@@ -232,6 +234,7 @@ namespace MACHINE_LEARNING {
                 return std::sqrt(sum / nrow);
             }
 
+            // Returns the minimum value of a column
             T minVal(const size_t c) const {
                 assert(c < colNum());
                 if constexpr (std::is_same<T, elem>::value) assert(dt(0, c).t != evType::STR);
@@ -243,6 +246,7 @@ namespace MACHINE_LEARNING {
                 return mine;
             }
 
+            // Returns the maximum value of a column
             T maxVal(const size_t c) const {
                 assert(c < colNum());
                 if constexpr (std::is_same<T, elem>::value) assert(dt(0, c).t != evType::STR);
@@ -284,6 +288,7 @@ namespace MACHINE_LEARNING {
                 dt.dropCol(feat_set, n);
             }
 
+            // Row binding
             void rbind(DataFrame& df, bool reset_colname = 0, std::vector<std::string> new_colname = {}) {
                 rbind(std::move(df), reset_colname, new_colname);
             }
@@ -301,6 +306,7 @@ namespace MACHINE_LEARNING {
                 dt.concat(df.dt, ROW);
             }
 
+            // Column binding
             void cbind(DataFrame& df) {
                 cbind(std::move(df));
             }

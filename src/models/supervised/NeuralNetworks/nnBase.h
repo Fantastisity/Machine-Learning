@@ -22,7 +22,7 @@ namespace MACHINE_LEARNING {
                 tmp.w = Matrix<double>(std::move(v), nrow, ncol);
                 return tmp;
             }
-            std::vector<uint16_t> k;
+            std::vector<size_t> k;
             std::vector<ACFUNC> func;
             size_t iter = 1000;
         protected:
@@ -37,27 +37,23 @@ namespace MACHINE_LEARNING {
                     this->x = x.template asType<double>();
                 else this->x = std::forward<T>(x);
 
-                this->x.addCol(std::vector<double>(x.rowNum(), 1.0).data());
+                this->x.addCol(std::vector<double>(x.rowNum(), 1.0).data()); // Bias
 
                 num = k.size();
-                layer = new Layer[num];
-                for (uint16_t i = 0; i < num; ++i) {
-                    if (!i) layer[i] = initLayer(this->x.colNum(), k[i]); // input layer
-                    else if (i == num - 1) layer[i] = initLayer(k[i], 1); // output layer
-                    else layer[i] = initLayer(k[i], k[i + 1]);
-                }
+                layer = new Layer[num + 1];
+                layer[0] = initLayer(this->x.colNum(), k[0]); // Input layer
+                for (uint16_t i = 0; i < num - 1; ++i) layer[i + 1] = initLayer(k[i], k[i + 1]); // Hidden layers
+                layer[num] = initLayer(k[num - 1], 1); // Output layer
 
                 if constexpr (UTIL_BASE::isDataframe<typename std::remove_reference<R>::type>::val) 
                     this->y = y.values().template asType<double>();
                 else if constexpr (UTIL_BASE::isMatrix<typename std::remove_reference<R>::type>::val)
                     this->y = y.template asType<double>();
                 else this->y = std::forward<T>(y);
-
-                this->y = this->y.trans();
             }
 
             void feed_forward(const Matrix<double>& X) {
-                for (uint16_t i = 1; i < num; ++i) {
+                for (uint16_t i = 0; i <= num; ++i) {
                     switch (func[i]) {
                         case ACFUNC::ELU:
                             layer[i].a = UTIL_BASE::MODEL_UTIL::METRICS::elu((!i ? X : layer[i - 1].a) * layer[i].w, .1);
@@ -78,45 +74,45 @@ namespace MACHINE_LEARNING {
             }
 
             void train() {
-                auto back_prop = [&]() -> void {
-                    for (uint16_t i = num - 1; ~i; --i) {
+                auto back_propagation = [&]() -> void {
+                    for (int i = num; ~i; --i) {
                         switch (func[i]) {
                             case ACFUNC::ELU:
-                                if (i == num - 1) layer[i].err = (y - layer[i].a) * UTIL_BASE::MODEL_UTIL::METRICS::d_elu(layer[i].a, .1);
-                                else if (!i) layer[i].err = (layer[0].w * layer[1].err) * UTIL_BASE::MODEL_UTIL::METRICS::d_elu(layer[0].a.trans(), .1);
-                                else layer[i].err = (layer[i].w * layer[i + 1].err.trans()) * UTIL_BASE::MODEL_UTIL::METRICS::d_elu(layer[i].a.trans(), .1);
+                                if (i == num) layer[i].err = (y - layer[i].a).multiply(UTIL_BASE::MODEL_UTIL::METRICS::d_elu(layer[i].a, .1));
+                                else if (!i) layer[i].err = (layer[i + 1].w * layer[i + 1].err).multiply(UTIL_BASE::MODEL_UTIL::METRICS::d_elu(layer[i].a.trans(), .1));
+                                else layer[i].err = (layer[i + 1].w * layer[i + 1].err.trans()).multiply(UTIL_BASE::MODEL_UTIL::METRICS::d_elu(layer[i].a.trans(), .1)); 
                                 break;
                             case ACFUNC::TANH:
-                                if (i == num - 1) layer[i].err = (y - layer[i].a) * UTIL_BASE::MODEL_UTIL::METRICS::d_tanh(layer[i].a);
-                                else if (!i) layer[i].err = (layer[0].w * layer[1].err) * UTIL_BASE::MODEL_UTIL::METRICS::d_tanh(layer[0].a.trans());
-                                else layer[i].err = (layer[i].w * layer[i + 1].err.trans()) * UTIL_BASE::MODEL_UTIL::METRICS::d_tanh(layer[i].a.trans());
+                                if (i == num) layer[i].err = (y - layer[i].a).multiply(UTIL_BASE::MODEL_UTIL::METRICS::d_tanh(layer[i].a));
+                                else if (!i) layer[i].err = (layer[i + 1].w * layer[i + 1].err).multiply(UTIL_BASE::MODEL_UTIL::METRICS::d_tanh(layer[i].a.trans()));
+                                else layer[i].err = (layer[i + 1].w * layer[i + 1].err.trans()).multiply(UTIL_BASE::MODEL_UTIL::METRICS::d_tanh(layer[i].a.trans()));                     
                                 break;
                             case ACFUNC::RELU:
-                                if (i == num - 1) layer[i].err = (y - layer[i].a) * UTIL_BASE::MODEL_UTIL::METRICS::d_relu(layer[i].a);
-                                else if (!i) layer[i].err = (layer[0].w * layer[1].err) * UTIL_BASE::MODEL_UTIL::METRICS::d_relu(layer[0].a.trans());
-                                else layer[i].err = (layer[i].w * layer[i + 1].err.trans()) * UTIL_BASE::MODEL_UTIL::METRICS::d_relu(layer[i].a.trans());
+                                if (i == num) layer[i].err = (y - layer[i].a).multiply(UTIL_BASE::MODEL_UTIL::METRICS::d_relu(layer[i].a));
+                                else if (!i) layer[i].err = (layer[i + 1].w * layer[i + 1].err).multiply(UTIL_BASE::MODEL_UTIL::METRICS::d_relu(layer[i].a.trans()));
+                                else layer[i].err = (layer[i + 1].w * layer[i + 1].err.trans()).multiply(UTIL_BASE::MODEL_UTIL::METRICS::d_relu(layer[i].a.trans())); 
                                 break;
                             case ACFUNC::SOFTMAX:
-                                if (i == num - 1) layer[i].err = (y - layer[i].a) * UTIL_BASE::MODEL_UTIL::METRICS::d_softmax(layer[i].a);
-                                else if (!i) layer[i].err = (layer[0].w * layer[1].err) * UTIL_BASE::MODEL_UTIL::METRICS::d_softmax(layer[0].a.trans());
-                                else layer[i].err = (layer[i].w * layer[i + 1].err.trans()) * UTIL_BASE::MODEL_UTIL::METRICS::d_softmax(layer[i].a.trans());
+                                if (i == num) layer[i].err = (y - layer[i].a).multiply(UTIL_BASE::MODEL_UTIL::METRICS::d_softmax(layer[i].a));
+                                else if (!i) layer[i].err = (layer[i + 1].w * layer[i + 1].err).multiply(UTIL_BASE::MODEL_UTIL::METRICS::d_softmax(layer[i].a.trans()));
+                                else layer[i].err = (layer[i + 1].w * layer[i + 1].err.trans()).multiply(UTIL_BASE::MODEL_UTIL::METRICS::d_softmax(layer[i].a.trans())); 
                                 break;
                             case ACFUNC::SIGMOID:
-                                if (i == num - 1) layer[i].err = (y - layer[i].a) * UTIL_BASE::MODEL_UTIL::METRICS::d_sigmoid(layer[i].a);
-                                else if (!i) layer[i].err = (layer[0].w * layer[1].err) * UTIL_BASE::MODEL_UTIL::METRICS::d_sigmoid(layer[0].a.trans());
-                                else layer[i].err = (layer[i].w * layer[i + 1].err.trans()) * UTIL_BASE::MODEL_UTIL::METRICS::d_sigmoid(layer[i].a.trans());
+                                if (i == num) layer[i].err = (y - layer[i].a).multiply(UTIL_BASE::MODEL_UTIL::METRICS::d_sigmoid(layer[i].a));
+                                else if (!i) layer[i].err = (layer[i + 1].w * layer[i + 1].err).multiply(UTIL_BASE::MODEL_UTIL::METRICS::d_sigmoid(layer[i].a.trans()));
+                                else layer[i].err = (layer[i + 1].w * layer[i + 1].err.trans()).multiply(UTIL_BASE::MODEL_UTIL::METRICS::d_sigmoid(layer[i].a.trans())); 
                         }
                     }
-                    for (uint16_t i = 0; i < num; ++i) {
-                        if (!i) layer[i].w += x.trans() * layer[i + 1].err.trans();
-                        else if (i == num - 1) layer[i].w += layer[i].a.trans() * layer[i].err;
-                        else layer[i].w += layer[i].a.trans() * layer[i + 1].err.trans();
+                    for (size_t i = 0; i <= num; ++i) {
+                        if (!i) layer[0].w += x.trans() * layer[0].err.trans();
+                        else if (i == num) layer[i].w += layer[i - 1].a.trans() * layer[i].err;
+                        else layer[i].w += layer[i - 1].a.trans() * layer[i].err.trans();
                     }
                 };
 
                 for (size_t i = 0; i < iter; ++i) {
                     feed_forward(x);
-                    back_prop();
+                    back_propagation();
                 }
             }
         public:
@@ -126,11 +122,11 @@ namespace MACHINE_LEARNING {
                     layer = nullptr;
                 }
             }
-            void set_layers(std::vector<uint16_t> k, ACFUNC func = ACFUNC::TANH) {
-                this->k = k, this->func = std::vector<ACFUNC>(k.size(), func);
+            void set_layers(std::vector<size_t> k, ACFUNC func = ACFUNC::TANH) {
+                this->k = k, this->func = std::vector<ACFUNC>(k.size() + 1, func);
             }
 
-            void set_layers(std::vector<uint16_t> k, std::vector<ACFUNC> func) {
+            void set_layers(std::vector<size_t> k, std::vector<ACFUNC> func) {
                 this->k = k, this->func = func;
             }
 

@@ -4,14 +4,14 @@ namespace MACHINE_LEARNING {
     class Perceptron : public LinearModel<Perceptron> {
             bool multiclass = 0;
             size_t nlabs;
-            std::unordered_set<double> labels;
+            std::unordered_set<double> labels; // Unique labels
         public:
             template<typename T, typename R>
             void fit(T&& x, R&& y, const uint8_t verbose = 0) {
                 init(std::forward<T>(x), std::forward<R>(y));
                 labels = this->y.unique(), nlabs = labels.size();
                 bool terminate = 0;
-                if (nlabs <= 2) {
+                if (nlabs <= 2) { // Binary classification
                     this->w = Matrix<double>(this->x.colNum(), 1);
                     for (size_t i = 0; i < this->iter && !terminate; ++i) {
                         terminate = 1;
@@ -20,7 +20,7 @@ namespace MACHINE_LEARNING {
                             if ((this->y(j, 0) * (x_tmp * this->w))(0, 0) < 1) this->w += this->y(j, 0) * x_tmp.trans(), terminate = 0;
                         }
                     }
-                } else {
+                } else { // Multiclass classification
                     multiclass = 1;
                     this->w = Matrix<double>(this->x.colNum(), nlabs);
                     for (size_t i = 0; i < this->iter && !terminate; ++i) {

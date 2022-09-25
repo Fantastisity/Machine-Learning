@@ -21,9 +21,8 @@ namespace MACHINE_LEARNING {
                     tmp = xtest.template asType<double>();
                 
                 tmp.addCol(std::vector<double>(tmp.rowNum(), 1.0).data());
-
                 feed_forward(tmp);
-                return layer[num - 1].a.trans();
+                return layer[num].a;
             }
     };
 }
