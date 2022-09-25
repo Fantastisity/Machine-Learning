@@ -1,14 +1,14 @@
 #define SUPERVISED
-//#define TEST_OLS
+#define TEST_OLS
 //#define TEST_LR
 //#define TEST_PERCEP
 //#define TEST_SVC
 //#define TEST_KNNREGRESSOR
 //#define TEST_KNNCLASSIFIER
-#define TEST_NN
+//#define TEST_NN
 
-//#define REGRESSION
-#define BINARY_CLASSIFICATION
+#define REGRESSION
+//#define BINARY_CLASSIFICATION
 //#define MULTICLASS_CLASSIFICATION
 
 // #define UNSUPERVISED
