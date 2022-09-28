@@ -50,6 +50,8 @@ int main()
      #endif
 };
 ~~~
+### Output
+![alt text](https://user-images.githubusercontent.com/61994603/192773215-ae799872-4557-4a3a-9a6f-3d2b508b473c.png)
 ### Build
 ```bash
 cd {path to current directory}
