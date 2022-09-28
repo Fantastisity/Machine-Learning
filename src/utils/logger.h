@@ -5,7 +5,9 @@
 struct Logger {
     template<typename... args>
     void operator()(args... arg) {
+        #ifdef DEBUG
         printf("== DEBUG == \t");
+        #endif
         __attribute__((unused)) auto _ = {((void)(std::cout << arg << "  "), 0)...};
         puts("");
     }

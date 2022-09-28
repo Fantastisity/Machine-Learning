@@ -292,7 +292,7 @@ namespace MACHINE_LEARNING {
                 return m;
             }
 
-            Matrix multiply(Matrix& rht) const {
+            Matrix multiply(Matrix& rht) const { // Element-wise multiplication
                 return multiply(std::move(rht));
             }
 

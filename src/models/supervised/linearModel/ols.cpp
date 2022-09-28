@@ -6,7 +6,7 @@
 namespace MACHINE_LEARNING {
     LinearRegression::LinearRegression() {
         #ifdef WRITE_TO_FILE
-            this->output.open("test.dat");
+            this->output.open("output.dat");
         #endif
     }
 

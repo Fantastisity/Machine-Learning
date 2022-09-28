@@ -2,7 +2,7 @@
 #define MODELUTIL_INCLUDED
 #include "../../../utils/modelUtil.h"
 #endif
-// #define WRITE_TO_FILE
+//#define WRITE_TO_FILE
 
 enum class GDType { None, BATCH , SAG, MINI_BATCH }; // Gradient descent type
 enum class Regularizor { None, L1, L2, ENet };
@@ -173,7 +173,7 @@ namespace MACHINE_LEARNING {
                 printf("**********************************************************\n");
                 printf("\t\t\t\t\t  Final Weights\n");
                 printf("**********************************************************\n");
-                for (size_t i = 0, r = w.rowNum(); i < r; ++i) printf("%lld\t\t\t\t\t\t\t\t\t\t\t  %+9.5f\n", i, w(i, 0));
+                for (size_t i = 0, r = w.rowNum(); i < r; ++i) printf("%lld\t\t\t\t\t\t\t\t\t\t\t   %+9.5f\n", i, w(i, 0));
                 puts("");
             }
         public:
