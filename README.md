@@ -51,7 +51,7 @@ int main()
 };
 ~~~
 ##### Sample Output
-<img src="[https://your-image-url.type](https://user-images.githubusercontent.com/61994603/192773215-ae799872-4557-4a3a-9a6f-3d2b508b473c.png)" width="300" alt="">
+<img src="https://user-images.githubusercontent.com/61994603/192773215-ae799872-4557-4a3a-9a6f-3d2b508b473c.png" width="300">
 ### Build
 ```bash
 cd {path to current directory}
