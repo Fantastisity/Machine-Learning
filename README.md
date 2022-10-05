@@ -47,6 +47,8 @@ int main()
         logger("validation set RMSE:", METRICS::RMSE(ols.predict(xtest), ytest.values()));
         logger("CV RMSE:", cross_validation(ols, xtrain, ytrain));
      #endif
+     
+     return 0;
 };
 ~~~
 ##### Sample Output
