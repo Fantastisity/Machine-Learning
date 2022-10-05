@@ -51,7 +51,7 @@ int main()
      return 0;
 };
 ~~~
-##### Sample Output
+### Sample Output
 <img src="https://user-images.githubusercontent.com/61994603/192773215-ae799872-4557-4a3a-9a6f-3d2b508b473c.png" width="500">
 
 ### Build
