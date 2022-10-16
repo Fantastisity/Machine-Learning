@@ -272,7 +272,7 @@ namespace MACHINE_LEARNING {
                 return idm;
             }
 
-            Matrix trans() const { // Leveraged caching
+            Matrix trans() const { // Matrix transpose (leveraged caching)
                 Matrix m(col, row);
                 for (size_t i = 0; i < row; i += 6) 
                     for (size_t j = 0; j < col; j += 4) 
