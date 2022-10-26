@@ -48,6 +48,8 @@ int main()
         logger("CV RMSE:", cross_validation(ols, xtrain, ytrain));
      #endif
      
+     #endif
+     
      return 0;
 };
 ~~~
