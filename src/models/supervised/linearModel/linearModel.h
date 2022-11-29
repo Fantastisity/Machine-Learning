@@ -215,6 +215,7 @@ namespace MACHINE_LEARNING {
                     else if (!strcmp(i.first, "batch_size")) this->batch_size = i.second;
                 }
             }
+            // Ref. https://stackoverflow.com/questions/20613017/calling-derived-class-function-from-base-class-with-templates-without-virtual
             template<typename T, typename R>
             void fit(T&& x, R&& y, const uint8_t verbose = 0) {
                 (static_cast<M*>(this))->fit(std::forward<T>(x), std::forward<R>(y), verbose);
